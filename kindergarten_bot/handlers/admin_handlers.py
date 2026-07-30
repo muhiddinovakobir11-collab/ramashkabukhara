@@ -528,3 +528,28 @@ async def admin_unblock_user(callback: CallbackQuery):
         print(f"Error sending to user: {e}")
 
 
+
+@router.callback_query(F.data == "admin_delete_last_broadcast")
+async def admin_delete_last_broadcast_handler(callback: CallbackQuery):
+    broadcast_id = await database.get_latest_broadcast_id()
+    if not broadcast_id:
+        await callback.answer("Hozircha hech qanday xabar tarqatilmagan!", show_alert=True)
+        return
+        
+    await callback.message.edit_text("🗑 Oxirgi tarqatilgan xabarlar o'chirilmoqda. Iltimos kuting...")
+    
+    messages = await database.get_broadcast_messages(broadcast_id)
+    deleted = 0
+    for user_id, message_id in messages:
+        try:
+            await callback.bot.delete_message(chat_id=user_id, message_id=message_id)
+            deleted += 1
+        except Exception:
+            pass
+        await asyncio.sleep(0.05)
+        
+    from keyboards.inline_keyboards import admin_menu_keyboard
+    await callback.message.edit_text(
+        f"✅ O'chirish yakunlandi!\nJami {deleted} ta xabar o'chirildi.",
+        reply_markup=admin_menu_keyboard()
+    )

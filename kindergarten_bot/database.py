@@ -307,3 +307,11 @@ async def get_broadcast_messages(broadcast_id: int) -> List[Tuple[int, int]]:
         ) as cursor:
             rows = await cursor.fetchall()
         return rows
+
+async def get_latest_broadcast_id() -> int:
+    async with aiosqlite.connect(DB_NAME) as db:
+        async with db.execute("SELECT id FROM broadcasts ORDER BY id DESC LIMIT 1") as cursor:
+            row = await cursor.fetchone()
+            if row:
+                return row[0]
+            return None

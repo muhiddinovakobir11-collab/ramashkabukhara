@@ -54,6 +54,7 @@ def admin_menu_keyboard():
             [InlineKeyboardButton(text="📝 Matnlarni tahrirlash", callback_data="admin_edit_texts")],
             [InlineKeyboardButton(text="📸 Galereyani tahrirlash", callback_data="admin_edit_gallery")],
             [InlineKeyboardButton(text="📢 Xabar tarqatish (Ommaviy)", callback_data="admin_broadcast")],
+            [InlineKeyboardButton(text="🗑 Oxirgi xabarni o'chirish", callback_data="admin_delete_last_broadcast")],
             [InlineKeyboardButton(text="🔙 Orqaga", callback_data="back_to_main")]
         ]
     )
