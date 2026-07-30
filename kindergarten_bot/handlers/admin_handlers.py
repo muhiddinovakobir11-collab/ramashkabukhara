@@ -392,11 +392,13 @@ async def admin_user_detail(callback: CallbackQuery):
         return
         
     from keyboards.inline_keyboards import admin_user_detail_menu
+    default_name = "Noma'lum"
+    default_username = "Yo'q"
     text = (
         f"👤 <b>Foydalanuvchi ma'lumotlari:</b>\n\n"
-        f"<b>Ismi:</b> {db_user.get('full_name', \"Noma'lum\")}\n"
+        f"<b>Ismi:</b> {db_user.get('full_name', default_name)}\n"
         f"<b>Telefon:</b> {db_user.get('phone', 'Kiritilmagan')}\n"
-        f"<b>Username:</b> {db_user.get('username', \"Yo'q\")}\n"
+        f"<b>Username:</b> {db_user.get('username', default_username)}\n"
         f"<b>ID:</b> {user_id}"
     )
     await callback.message.edit_text(text, parse_mode="HTML", reply_markup=admin_user_detail_menu(user_id))
