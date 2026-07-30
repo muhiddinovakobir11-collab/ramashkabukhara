@@ -357,8 +357,11 @@ async def admin_approve_user(callback: CallbackQuery):
                 await callback.bot.send_message(user_id, caption_text, parse_mode="HTML", reply_markup=main_inline_menu(user_id))
         else:
             await callback.bot.send_message(user_id, caption_text, parse_mode="HTML", reply_markup=main_inline_menu(user_id))
+            
+        await callback.message.reply("✅ <b>O'sha foydalanuvchiga bot tomonidan avtomatik ravishda tabriknoma va video yuborildi!</b>", parse_mode="HTML")
     except Exception as e:
         print(f"Error sending to user: {e}")
+        await callback.message.reply(f"❌ Xatolik yuz berdi: foydalanuvchiga xabar bormadi. Sabab: {e}")
 
 @router.callback_query(F.data.startswith("auth_reject_"))
 async def admin_reject_user(callback: CallbackQuery):

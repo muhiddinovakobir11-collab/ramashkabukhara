@@ -18,7 +18,7 @@ class AuthMiddleware(BaseMiddleware):
         if not user:
             return await handler(event, data)
             
-        if str(user.id) == str(ADMIN_ID):
+        if str(user.id) == str(ADMIN_ID).strip():
             return await handler(event, data)
             
         db_user = database.get_user(user.id)
