@@ -334,13 +334,12 @@ async def admin_approve_user(callback: CallbackQuery):
     # Send main menu to user
     from config import START_TEXT
     from keyboards.inline_keyboards import main_inline_menu
-    from main import bot
     try:
         text = "🎉 <b>Tabriklaymiz, arizangiz qabul qilindi!</b>\n\nSiz endi botdan to'liq foydalanishingiz mumkin."
-        await bot.send_message(user_id, text, parse_mode="HTML")
-        await bot.send_message(user_id, START_TEXT, parse_mode="HTML", reply_markup=main_inline_menu())
-    except Exception:
-        pass
+        await callback.bot.send_message(user_id, text, parse_mode="HTML")
+        await callback.bot.send_message(user_id, START_TEXT, parse_mode="HTML", reply_markup=main_inline_menu())
+    except Exception as e:
+        print(f"Error sending to user: {e}")
 
 @router.callback_query(F.data.startswith("auth_reject_"))
 async def admin_reject_user(callback: CallbackQuery):
@@ -350,12 +349,11 @@ async def admin_reject_user(callback: CallbackQuery):
     await callback.message.edit_text(callback.message.html_text + "\n\n<b>❌ RAD ETILDI</b>", parse_mode="HTML")
     await callback.answer("Rad etildi!")
     
-    from main import bot
     try:
         text = "❌ <b>Kechirasiz, sizning arizangiz ma'muriyat tomonidan rad etildi.</b>"
-        await bot.send_message(user_id, text, parse_mode="HTML")
-    except Exception:
-        pass
+        await callback.bot.send_message(user_id, text, parse_mode="HTML")
+    except Exception as e:
+        print(f"Error sending to user: {e}")
 
 # ================= USER MANAGEMENT =================
 @router.message(F.text == "👥 Foydalanuvchilar", F.from_user.id.in_({int(ADMIN_ID) if ADMIN_ID else 0}))
@@ -417,8 +415,7 @@ async def admin_revoke_user(callback: CallbackQuery):
     await callback.message.edit_text(callback.message.html_text + "\n\n<b>🚫 RUXSAT BEKOR QILINDI</b>", parse_mode="HTML")
     await callback.answer("Ruxsat bekor qilindi!")
     
-    from main import bot
     try:
-        await bot.send_message(user_id, "🚫 <b>Sizning botdan foydalanish ruxsatingiz ma'muriyat tomonidan bekor qilindi.</b>", parse_mode="HTML")
-    except Exception:
-        pass
+        await callback.bot.send_message(user_id, "🚫 <b>Sizning botdan foydalanish ruxsatingiz ma'muriyat tomonidan bekor qilindi.</b>", parse_mode="HTML")
+    except Exception as e:
+        print(f"Error sending to user: {e}")

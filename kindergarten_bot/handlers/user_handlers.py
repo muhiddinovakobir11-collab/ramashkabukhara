@@ -431,17 +431,16 @@ async def auth_phone_received(message: Message, state: FSMContext):
     # Adminga yuborish
     if ADMIN_ID:
         from keyboards.inline_keyboards import admin_approval_keyboard
-        from main import bot
         text = (
             f"👤 <b>Yangi foydalanuvchi ruxsat so'rayapti!</b>\n\n"
             f"<b>Ism-familiya:</b> {full_name}\n"
             f"<b>Telefon:</b> {phone}\n"
-            f"<b>ID:</b> {user_id}"
+            f"<b>ID:</b> <code>{user_id}</code>"
         )
         try:
-            await bot.send_message(ADMIN_ID, text, parse_mode="HTML", reply_markup=admin_approval_keyboard(user_id))
+            await message.bot.send_message(ADMIN_ID, text, parse_mode="HTML", reply_markup=admin_approval_keyboard(user_id))
         except Exception as e:
-            pass
+            print(f"Adminga yuborishda xatolik: {e}")
             
 # ================= OTHER HANDLERS =================
     await callback.message.delete()
