@@ -1,5 +1,5 @@
 from aiogram import Router, F, Bot
-from aiogram.types import Message, CallbackQuery, FSInputFile, InputMediaPhoto, InputMediaVideo
+from aiogram.types import Message, CallbackQuery, FSInputFile, InputMediaPhoto, InputMediaVideo, ReplyKeyboardRemove
 from aiogram.filters import CommandStart, StateFilter
 from aiogram.fsm.context import FSMContext
 from states import UserFeedback, UserVacancy
@@ -39,6 +39,10 @@ async def cmd_start(message: Message):
             )
         except Exception:
             pass
+
+    # Eski reply klaviaturani o'chirish uchun
+    remove_msg = await message.answer("⏳ Yuklanmoqda...", reply_markup=ReplyKeyboardRemove())
+    await remove_msg.delete()
 
     # Video va Matn jo'natish
     caption_text = (
