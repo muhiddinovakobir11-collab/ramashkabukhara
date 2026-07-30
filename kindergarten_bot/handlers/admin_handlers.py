@@ -332,12 +332,31 @@ async def admin_approve_user(callback: CallbackQuery):
     await callback.answer("Tasdiqlandi!")
     
     # Send main menu to user
-    from config import START_TEXT
+    from config import START_VIDEO_ID
     from keyboards.inline_keyboards import main_inline_menu
     try:
         text = "🎉 <b>Tabriklaymiz, arizangiz qabul qilindi!</b>\n\nSiz endi botdan to'liq foydalanishingiz mumkin."
         await callback.bot.send_message(user_id, text, parse_mode="HTML")
-        await callback.bot.send_message(user_id, START_TEXT, parse_mode="HTML", reply_markup=main_inline_menu())
+        
+        caption_text = (
+            "Assalomu alaykum, akoshprod!\n"
+            "Xususiy bog'chamizning rasmiy botiga xush kelibsiz.\n\n"
+            "Botdan foydalanishingiz mumkin 😊"
+        )
+        
+        if START_VIDEO_ID:
+            try:
+                await callback.bot.send_video(
+                    chat_id=user_id,
+                    video=START_VIDEO_ID,
+                    caption=caption_text,
+                    parse_mode="HTML",
+                    reply_markup=main_inline_menu(user_id)
+                )
+            except Exception:
+                await callback.bot.send_message(user_id, caption_text, parse_mode="HTML", reply_markup=main_inline_menu(user_id))
+        else:
+            await callback.bot.send_message(user_id, caption_text, parse_mode="HTML", reply_markup=main_inline_menu(user_id))
     except Exception as e:
         print(f"Error sending to user: {e}")
 
