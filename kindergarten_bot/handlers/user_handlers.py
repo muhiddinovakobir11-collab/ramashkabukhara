@@ -401,11 +401,12 @@ async def back_to_main_menu(callback: CallbackQuery, state: FSMContext):
             await callback.message.edit_media(media=media, reply_markup=main_inline_menu(callback.from_user.id))
         else:
             await edit_message_safe(callback.message, text, main_inline_menu(callback.from_user.id))
-    except Exception:
+    except Exception as e1:
         try:
             await edit_message_safe(callback.message, text, main_inline_menu(callback.from_user.id))
-        except Exception:
-            pass
+        except Exception as e2:
+            await callback.answer(f"Xatolik 1: {e1} | Xatolik 2: {e2}", show_alert=True)
+            return
     await callback.answer()
 
 # ================= AUTHENTICATION HANDLERS =================
