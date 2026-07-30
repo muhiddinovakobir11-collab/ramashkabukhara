@@ -105,7 +105,7 @@ def add_user(user_id: int, username: str, full_name: str) -> bool:
         cursor.execute("UPDATE users SET is_active = 1 WHERE user_id = ?", (user_id,))
         # Adminni avtomatik tasdiqlash uchun kafolat
         from config import ADMIN_ID
-        if str(user_id) == str(ADMIN_ID):
+        if ADMIN_ID and str(user_id) == str(ADMIN_ID):
             cursor.execute("UPDATE users SET status = 'approved' WHERE user_id = ?", (user_id,))
             
         conn.commit()

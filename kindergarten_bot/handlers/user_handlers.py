@@ -24,6 +24,8 @@ async def edit_message_safe(message: Message, text: str, reply_markup):
 
 @router.message(CommandStart())
 async def cmd_start(message: Message, state: FSMContext):
+    await state.clear()
+    
     user = message.from_user
     user_id = user.id
     is_new = database.add_user(user.id, user.username, user.full_name)
