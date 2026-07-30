@@ -305,6 +305,7 @@ def admin_user_detail_menu(user_id: int, status: str):
 def delete_broadcast_menu(broadcast_id: int):
     return InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text=""🗑 Xabarni bekor qilish (O'chirish)"", callback_data=f""delete_broadcast_{broadcast_id}"")]
+            [InlineKeyboardButton(text="🗑 Xabarni bekor qilish (O'chirish)", callback_data=f"delete_broadcast_{broadcast_id}")]
         ]
     )
+
