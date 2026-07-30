@@ -395,18 +395,22 @@ async def back_to_main_menu(callback: CallbackQuery, state: FSMContext):
         f"Xususiy bog'chamizning rasmiy botiga xush kelibsiz.\n\n"
         f"Botdan foydalanishingiz mumkin 😊"
     )
+    markup = main_inline_menu(callback.from_user.id)
     try:
-        if START_VIDEO_ID:
+        if START_VIDEO_ID and (callback.message.video or callback.message.photo):
             media = InputMediaVideo(media=START_VIDEO_ID, caption=text, parse_mode="HTML")
-            await callback.message.edit_media(media=media, reply_markup=main_inline_menu(callback.from_user.id))
+            await callback.message.edit_media(media=media, reply_markup=markup)
+        elif callback.message.video or callback.message.photo:
+            await callback.message.edit_caption(caption=text, parse_mode="HTML", reply_markup=markup)
         else:
-            await edit_message_safe(callback.message, text, main_inline_menu(callback.from_user.id))
-    except Exception as e1:
-        try:
-            await edit_message_safe(callback.message, text, main_inline_menu(callback.from_user.id))
-        except Exception as e2:
-            await callback.answer(f"Xatolik 1: {e1} | Xatolik 2: {e2}", show_alert=True)
+            await callback.message.edit_text(text, parse_mode="HTML", reply_markup=markup)
+    except Exception as e:
+        if "is not modified" in str(e).lower():
+            pass
+        else:
+            await callback.answer(f"Xato: {str(e)[:150]}", show_alert=True)
             return
+            
     await callback.answer()
 
 # ================= AUTHENTICATION HANDLERS =================

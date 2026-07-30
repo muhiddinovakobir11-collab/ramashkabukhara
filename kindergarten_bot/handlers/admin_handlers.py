@@ -2,7 +2,7 @@ from aiogram import Router, F
 from aiogram.types import CallbackQuery, Message, InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.fsm.context import FSMContext
 from states import AdminSettings, AdminGallery, AdminBroadcast, AdminCameraEdit, AdminFAQEdit
-from keyboards.inline_keyboards import (admin_main_menu, admin_edit_texts_menu, 
+from keyboards.inline_keyboards import (admin_menu_keyboard, admin_edit_texts_menu, 
                                         admin_back_keyboard, admin_gallery_type_menu, 
                                         admin_gallery_categories_menu, admin_cameras_menu, 
                                         admin_camera_edit_menu, admin_food_days_menu, admin_faqs_menu)
@@ -22,7 +22,7 @@ router.message.filter(F.from_user.id == int(ADMIN_ID) if ADMIN_ID else False)
 async def admin_panel(callback: CallbackQuery, state: FSMContext):
     await state.clear()
     text = "👨‍💻 <b>Admin Panel</b>\n\nQuyidagi menyulardan birini tanlang:"
-    await edit_message_safe(callback.message, text, admin_main_menu())
+    await edit_message_safe(callback.message, text, admin_menu_keyboard())
     await callback.answer()
 
 @router.callback_query(F.data == "admin_stats")
@@ -38,8 +38,8 @@ async def admin_stats(callback: CallbackQuery):
         f"✅ Faol foydalanuvchilar: {active_users}\n"
         f"❌ Botni bloklaganlar: {blocked_users}\n"
     )
-    # Statistika ostiga admin_main_menu ni qaytaramiz (chunki unda orqaga bor)
-    await edit_message_safe(callback.message, text, admin_main_menu())
+    # Statistika ostiga admin_menu_keyboard ni qaytaramiz (chunki unda orqaga bor)
+    await edit_message_safe(callback.message, text, admin_menu_keyboard())
     await callback.answer()
 
 @router.callback_query(F.data == "admin_edit_texts")
