@@ -395,7 +395,18 @@ async def back_to_main_menu(callback: CallbackQuery, state: FSMContext):
         f"Xususiy bog'chamizning rasmiy botiga xush kelibsiz.\n\n"
         f"Botdan foydalanishingiz mumkin 😊"
     )
-    # callback query handled by generic fallback if needed
+    try:
+        if START_VIDEO_ID:
+            media = InputMediaVideo(media=START_VIDEO_ID, caption=text, parse_mode="HTML")
+            await callback.message.edit_media(media=media, reply_markup=main_inline_menu(callback.from_user.id))
+        else:
+            await edit_message_safe(callback.message, text, main_inline_menu(callback.from_user.id))
+    except Exception:
+        try:
+            await edit_message_safe(callback.message, text, main_inline_menu(callback.from_user.id))
+        except Exception:
+            pass
+    await callback.answer()
 
 # ================= AUTHENTICATION HANDLERS =================
 @router.message(UserRegistration.waiting_for_name, F.text)
