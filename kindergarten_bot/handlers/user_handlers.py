@@ -23,8 +23,9 @@ async def edit_message_safe(message: Message, text: str, reply_markup):
         pass
 
 @router.message(CommandStart())
-async def cmd_start(message: Message):
+async def cmd_start(message: Message, state: FSMContext):
     user = message.from_user
+    user_id = user.id
     is_new = database.add_user(user.id, user.username, user.full_name)
     
     # Adminga faqat BOSHQA yangi odamlar kirganda xabar berish
