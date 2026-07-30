@@ -65,14 +65,14 @@ def admin_edit_texts_menu():
             [InlineKeyboardButton(text="📸 Galereya", callback_data="edit_gallery"),
              InlineKeyboardButton(text="🕒 Kun tartibi", callback_data="edit_schedule")],
             [InlineKeyboardButton(text="👩‍🏫 Tarbiyachilar", callback_data="edit_teachers"),
-             InlineKeyboardButton(text="❓ FAQ", callback_data="edit_faq")],
+             InlineKeyboardButton(text="💬 Ko'p so'raladigan savollar", callback_data="edit_faq")],
             [InlineKeyboardButton(text="🌟 Faol o'quvchilar", callback_data="edit_active_students"),
              InlineKeyboardButton(text="🍲 Taomnoma", callback_data="edit_food_menu")],
             [InlineKeyboardButton(text="💳 To'lovlar qoidalari", callback_data="edit_payment")],
-            [InlineKeyboardButton(text="🎥 Kameralar", callback_data="edit_cameras"),
-             InlineKeyboardButton(text="🧠 Psixolog", callback_data="edit_psychologist")],
+            [InlineKeyboardButton(text="🎥 Onlayn Kameralar (Boshqarish)", callback_data="admin_manage_cameras"),
+             InlineKeyboardButton(text="🧠 Psixolog maslahati", callback_data="edit_psychologist")],
             [InlineKeyboardButton(text="🎂 Tug'ilgan kunlar", callback_data="edit_birthdays"),
-             InlineKeyboardButton(text="🎈 Bayramlar", callback_data="edit_events")],
+             InlineKeyboardButton(text="🎈 Bayramlar va tadbirlar", callback_data="edit_events")],
             [InlineKeyboardButton(text="🏆 Yutuqlarimiz", callback_data="edit_achievements"),
              InlineKeyboardButton(text="👗 Bog'cha formasi", callback_data="edit_dress_code")],
             [InlineKeyboardButton(text="🔙 Orqaga", callback_data="admin_panel")]
@@ -87,13 +87,49 @@ def admin_back_keyboard():
     )
 
 def gallery_type_menu():
-    return InlineKeyboardMarkup(
-        inline_keyboard=[
-            [InlineKeyboardButton(text="🖼 Rasmlar", callback_data="gal_type_photo"),
-             InlineKeyboardButton(text="🎥 Videolar", callback_data="gal_type_video")],
-            [InlineKeyboardButton(text="🔙 Orqaga", callback_data="back_to_main")]
-        ]
-    )
+    buttons = [
+        [InlineKeyboardButton(text="📸 Rasmlar", callback_data="view_gallery_photo"),
+         InlineKeyboardButton(text="🎥 Videolar", callback_data="view_gallery_video")],
+        [InlineKeyboardButton(text="Orqaga", callback_data="back_to_main")]
+    ]
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+def admin_cameras_menu(cameras: list):
+    buttons = []
+    # kameralarni 2 tadan qatorga joylash
+    row = []
+    for cam in cameras:
+        status = "🟢" if cam['is_active'] else "🔴"
+        text = f"{status} {cam['name']}"
+        row.append(InlineKeyboardButton(text=text, callback_data=f"admin_cam_{cam['id']}"))
+        if len(row) == 2:
+            buttons.append(row)
+            row = []
+    if row:
+        buttons.append(row)
+    
+    buttons.append([InlineKeyboardButton(text="Orqaga", callback_data="admin_edit_texts")])
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+def admin_camera_edit_menu(camera_id: int, is_active: bool):
+    status_text = "🔴 O'chirish" if is_active else "🟢 Yoqish"
+    buttons = [
+        [InlineKeyboardButton(text=status_text, callback_data=f"admin_cam_toggle_{camera_id}")],
+        [InlineKeyboardButton(text="🔗 Ssilkani o'zgartirish", callback_data=f"admin_cam_link_{camera_id}")],
+        [InlineKeyboardButton(text="Orqaga", callback_data="admin_manage_cameras")]
+    ]
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+def user_cameras_menu(cameras: list):
+    buttons = []
+    # kameralarni 1 tadan qilib url bilan joylash
+    for cam in cameras:
+        # url bo'sh bo'lsa, xato bermasligi uchun qanaqadir fallback
+        url = cam['url'] if cam['url'] and cam['url'].startswith("http") else "https://google.com"
+        buttons.append([InlineKeyboardButton(text=f"📹 {cam['name']}", url=url)])
+        
+    buttons.append([InlineKeyboardButton(text="Orqaga", callback_data="back_to_main")])
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
 
 def gallery_categories_menu(media_type: str):
     return InlineKeyboardMarkup(

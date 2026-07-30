@@ -1,10 +1,10 @@
 from aiogram import Router, F
 from aiogram.types import CallbackQuery, Message, InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.fsm.context import FSMContext
-from states import AdminSettings, AdminGallery, AdminBroadcast
+from states import AdminSettings, AdminGallery, AdminBroadcast, AdminCameraEdit
 from keyboards.inline_keyboards import (admin_main_menu, admin_edit_texts_menu, 
                                         admin_back_keyboard, admin_gallery_type_menu, 
-                                        admin_gallery_categories_menu)
+                                        admin_gallery_categories_menu, admin_cameras_menu, admin_camera_edit_menu)
 from config import ADMIN_ID
 import database
 from handlers.user_handlers import edit_message_safe
@@ -197,3 +197,59 @@ async def process_admin_broadcast(message: Message, state: FSMContext):
         await asyncio.sleep(0.05)
         
     await msg.edit_text(f"✅ Xabar tarqatish yakunlandi!\n\nYetkazildi: {success_count} ta\nBloklagan/Xato: {fail_count} ta")
+
+# ================= CAMERAS MANAGEMENT =================
+@router.callback_query(F.data == "admin_manage_cameras")
+async def admin_manage_cameras(callback: CallbackQuery, state: FSMContext):
+    await state.clear()
+    cameras = database.get_all_cameras()
+    text = "🎥 <b>Kameralarni boshqarish</b>\n\nQaysi kamerani tahrirlamoqchisiz?"
+    await edit_message_safe(callback.message, text, admin_cameras_menu(cameras))
+    await callback.answer()
+
+@router.callback_query(F.data.startswith("admin_cam_"))
+async def admin_camera_action(callback: CallbackQuery, state: FSMContext):
+    data = callback.data
+    
+    if data.startswith("admin_cam_toggle_"):
+        cam_id = int(data.split("_")[3])
+        database.toggle_camera_status(cam_id)
+        cam = database.get_camera(cam_id)
+        text = f"🎥 <b>{cam['name']}</b> holati o'zgartirildi.\n\nHozirgi ssilka: {cam['url'] if cam['url'] else 'Kiritilmagan'}"
+        await edit_message_safe(callback.message, text, admin_camera_edit_menu(cam_id, cam['is_active']))
+        
+    elif data.startswith("admin_cam_link_"):
+        cam_id = int(data.split("_")[3])
+        cam = database.get_camera(cam_id)
+        text = f"🔗 <b>{cam['name']}</b> uchun yangi ssilkani yuboring (Masalan: https://... yoki rtmp://...):"
+        await state.update_data(editing_cam_id=cam_id)
+        await state.set_state(AdminCameraEdit.waiting_for_url)
+        await edit_message_safe(callback.message, text, admin_back_keyboard())
+        
+    else:
+        # Just viewing the camera
+        try:
+            cam_id = int(data.split("_")[2])
+            cam = database.get_camera(cam_id)
+            if not cam:
+                return
+            status = "🟢 Yoqilgan" if cam['is_active'] else "🔴 O'chirilgan"
+            url = cam['url'] if cam['url'] else "Hali kiritilmagan"
+            text = f"🎥 <b>{cam['name']}</b>\n\nHolati: {status}\nSsilka (URL): {url}"
+            await edit_message_safe(callback.message, text, admin_camera_edit_menu(cam_id, cam['is_active']))
+        except ValueError:
+            pass
+            
+    await callback.answer()
+
+@router.message(AdminCameraEdit.waiting_for_url, F.text)
+async def save_camera_url(message: Message, state: FSMContext):
+    data = await state.get_data()
+    cam_id = data.get("editing_cam_id")
+    url = message.text.strip()
+    
+    database.update_camera_url(cam_id, url)
+    cam = database.get_camera(cam_id)
+    
+    await message.reply(f"✅ <b>{cam['name']}</b> ssilkasi saqlandi!\n\nYangilangan ssilka: {url}")
+    await state.clear()

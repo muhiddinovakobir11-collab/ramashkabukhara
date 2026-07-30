@@ -14,3 +14,6 @@ class UserFeedback(StatesGroup):
 
 class UserVacancy(StatesGroup):
     waiting_for_resume = State()
+
+class AdminCameraEdit(StatesGroup):
+    waiting_for_url = State()

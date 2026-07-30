@@ -3,7 +3,7 @@ from aiogram.types import Message, CallbackQuery, FSInputFile, InputMediaPhoto, 
 from aiogram.filters import CommandStart, StateFilter
 from aiogram.fsm.context import FSMContext
 from states import UserFeedback, UserVacancy
-from keyboards.inline_keyboards import back_keyboard, location_keyboard, payment_groups_menu, main_inline_menu
+from keyboards.inline_keyboards import back_keyboard, location_keyboard, payment_groups_menu, main_inline_menu, user_cameras_menu
 from config import ADMIN_ID, START_VIDEO_ID
 import database
 
@@ -59,12 +59,17 @@ async def cmd_start(message: Message):
 
 @router.callback_query(F.data == "cameras")
 async def cameras_menu(callback: CallbackQuery):
-    default_text = (
-        "🎥 <b>Onlayn Kuzatuv Kameralari</b>\n\n"
-        "Farzandingiz xavfsizligi va uning kun davomida nimalar bilan mashg'ul ekanligi siz uchun muhimligini bilamiz!\n\n"
-        "Onlayn kameralarga ulanish uchun maxsus login va parolni bog'cha ma'muriyatidan shaxsan olishingiz mumkin."
-    )
-    await send_section_media(callback, "text_cameras", default_text, back_keyboard())
+    cameras = database.get_active_cameras()
+    if not cameras:
+        default_text = (
+            "🎥 <b>Onlayn Kuzatuv Kameralari</b>\n\n"
+            "Farzandingiz xavfsizligi va uning kun davomida nimalar bilan mashg'ul ekanligi siz uchun muhimligini bilamiz!\n\n"
+            "Ayni paytda kameralar admin tomonidan yoqilmagan. Login va parolni bog'cha ma'muriyatidan shaxsan olishingiz mumkin."
+        )
+        await send_section_media(callback, "text_cameras", default_text, back_keyboard())
+    else:
+        text = "🎥 <b>Onlayn Kameralar</b>\n\nQuyidagi kameralardan birini tanlab ustiga bosing:"
+        await edit_message_safe(callback.message, text, user_cameras_menu(cameras))
     await callback.answer()
 
 @router.callback_query(F.data == "psychologist")

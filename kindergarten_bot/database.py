@@ -41,6 +41,19 @@ def init_db():
             date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS cameras (
+            id INTEGER PRIMARY KEY,
+            name TEXT,
+            url TEXT,
+            is_active BOOLEAN DEFAULT 0
+        )
+    """)
+    # Insert 10 default cameras if not exists
+    cursor.execute("SELECT count(*) FROM cameras")
+    if cursor.fetchone()[0] == 0:
+        for i in range(1, 11):
+            cursor.execute("INSERT INTO cameras (id, name, url, is_active) VALUES (?, ?, ?, 0)", (i, f"Kamera {i}", ""))
     conn.commit()
     conn.close()
 
@@ -169,5 +182,45 @@ def add_payment(user_id: int, amount: int, currency: str, payload: str, provider
         INSERT INTO payments (user_id, amount, currency, payload, provider_payment_charge_id)
         VALUES (?, ?, ?, ?, ?)
     """, (user_id, amount, currency, payload, provider_payment_charge_id))
+    conn.commit()
+    conn.close()
+
+def get_all_cameras() -> List[dict]:
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, name, url, is_active FROM cameras ORDER BY id ASC")
+    rows = cursor.fetchall()
+    conn.close()
+    return [{"id": r[0], "name": r[1], "url": r[2], "is_active": bool(r[3])} for r in rows]
+
+def get_active_cameras() -> List[dict]:
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, name, url, is_active FROM cameras WHERE is_active = 1 ORDER BY id ASC")
+    rows = cursor.fetchall()
+    conn.close()
+    return [{"id": r[0], "name": r[1], "url": r[2], "is_active": bool(r[3])} for r in rows]
+
+def get_camera(camera_id: int) -> dict:
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, name, url, is_active FROM cameras WHERE id = ?", (camera_id,))
+    row = cursor.fetchone()
+    conn.close()
+    if row:
+        return {"id": row[0], "name": row[1], "url": row[2], "is_active": bool(row[3])}
+    return None
+
+def update_camera_url(camera_id: int, url: str):
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+    cursor.execute("UPDATE cameras SET url = ? WHERE id = ?", (url, camera_id))
+    conn.commit()
+    conn.close()
+
+def toggle_camera_status(camera_id: int):
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+    cursor.execute("UPDATE cameras SET is_active = NOT is_active WHERE id = ?", (camera_id,))
     conn.commit()
     conn.close()
