@@ -40,11 +40,8 @@ async def cmd_start(message: Message):
         except Exception:
             pass
 
-    # Eski reply klaviaturani o'chirish uchun
-    remove_msg = await message.answer("🔄 Menyu yangilanmoqda...", reply_markup=ReplyKeyboardRemove())
-    import asyncio
-    await asyncio.sleep(1)
-    await remove_msg.delete()
+    # Eski reply klaviaturani o'chirish uchun xabarni yuboramiz va UNI O'CHIRMAYMIZ
+    await message.answer("👋 Xush kelibsiz! Barcha kerakli bo'limlar quyidagi tugmalarda joylashgan:", reply_markup=ReplyKeyboardRemove())
 
     # Video va Matn jo'natish
     caption_text = (
