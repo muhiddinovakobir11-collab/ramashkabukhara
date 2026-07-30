@@ -60,6 +60,20 @@ async def init_db():
                 is_active BOOLEAN DEFAULT 0
             )
         """)
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS broadcasts (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS broadcast_messages (
+                broadcast_id INTEGER,
+                user_id INTEGER,
+                message_id INTEGER,
+                FOREIGN KEY(broadcast_id) REFERENCES broadcasts(id)
+            )
+        """)
         async with db.execute("SELECT count(*) FROM cameras") as cursor:
             count = await cursor.fetchone()
             if count[0] == 0:
@@ -270,3 +284,26 @@ async def delete_faq(faq_id: int):
     async with aiosqlite.connect(DB_NAME) as db:
         await db.execute("DELETE FROM faqs WHERE id = ?", (faq_id,))
         await db.commit()
+
+async def create_broadcast() -> int:
+    async with aiosqlite.connect(DB_NAME) as db:
+        cursor = await db.execute("INSERT INTO broadcasts DEFAULT VALUES")
+        await db.commit()
+        return cursor.lastrowid
+
+async def add_broadcast_message(broadcast_id: int, user_id: int, message_id: int):
+    async with aiosqlite.connect(DB_NAME) as db:
+        await db.execute(
+            "INSERT INTO broadcast_messages (broadcast_id, user_id, message_id) VALUES (?, ?, ?)",
+            (broadcast_id, user_id, message_id)
+        )
+        await db.commit()
+
+async def get_broadcast_messages(broadcast_id: int) -> List[Tuple[int, int]]:
+    async with aiosqlite.connect(DB_NAME) as db:
+        async with db.execute(
+            "SELECT user_id, message_id FROM broadcast_messages WHERE broadcast_id = ?", 
+            (broadcast_id,)
+        ) as cursor:
+            rows = await cursor.fetchall()
+        return rows

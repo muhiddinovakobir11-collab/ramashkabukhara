@@ -177,21 +177,15 @@ async def admin_broadcast_prompt(callback: CallbackQuery, state: FSMContext):
     await edit_message_safe(callback.message, text, markup)
     await callback.answer()
 
-@router.message(AdminBroadcast.waiting_for_message)
-async def process_admin_broadcast(message: Message, state: FSMContext):
-    await state.clear()
-    users = await database.get_all_users()
-    active_users = [u for u in users if u[3] == 1]
-    
-    msg = await message.reply(f"⏳ Xabar {len(active_users)} ta foydalanuvchiga yuborilmoqda. Iltimos kuting...")
-    
+async def run_broadcast_task(bot_message: Message, target_message: Message, active_users: list, broadcast_id: int):
     success_count = 0
     fail_count = 0
     
     for u in active_users:
         user_id = u[0]
         try:
-            await message.copy_to(user_id)
+            sent_msg = await target_message.copy_to(user_id)
+            await database.add_broadcast_message(broadcast_id, user_id, sent_msg.message_id)
             success_count += 1
         except TelegramForbiddenError:
             await database.update_user_status(user_id, False)
@@ -200,7 +194,40 @@ async def process_admin_broadcast(message: Message, state: FSMContext):
             fail_count += 1
         await asyncio.sleep(0.05)
         
-    await msg.edit_text(f"✅ Xabar tarqatish yakunlandi!\n\nYetkazildi: {success_count} ta\nBloklagan/Xato: {fail_count} ta")
+    from keyboards.inline_keyboards import delete_broadcast_menu
+    await bot_message.edit_text(
+        f"✅ Xabar tarqatish yakunlandi!\n\nYetkazildi: {success_count} ta\nBloklagan/Xato: {fail_count} ta",
+        reply_markup=delete_broadcast_menu(broadcast_id)
+    )
+
+@router.message(AdminBroadcast.waiting_for_message)
+async def process_admin_broadcast(message: Message, state: FSMContext):
+    await state.clear()
+    users = await database.get_all_users()
+    active_users = [u for u in users if u[3] == 1]
+    
+    msg = await message.reply(f"📨 Xabar {len(active_users)} ta foydalanuvchiga yuborilmoqda. Orqa fonda ishlayapti, kuting...")
+    
+    broadcast_id = await database.create_broadcast()
+    asyncio.create_task(run_broadcast_task(msg, message, active_users, broadcast_id))
+
+@router.callback_query(F.data.startswith("delete_broadcast_"))
+async def delete_broadcast_handler(callback: CallbackQuery):
+    broadcast_id = int(callback.data.split("_")[2])
+    await callback.message.edit_text("🗑 Xabarlar o'chirilmoqda. Iltimos kuting...")
+    
+    messages = await database.get_broadcast_messages(broadcast_id)
+    deleted = 0
+    for user_id, message_id in messages:
+        try:
+            await callback.bot.delete_message(chat_id=user_id, message_id=message_id)
+            deleted += 1
+        except Exception:
+            pass
+        await asyncio.sleep(0.05)
+        
+    await callback.message.edit_text(f"✅ O'chirish yakunlandi!\nJami {deleted} ta xabar o'chirildi.")
+    await callback.answer()
 
 # ================= CAMERAS MANAGEMENT =================
 @router.callback_query(F.data == "admin_manage_cameras")
@@ -499,4 +526,5 @@ async def admin_unblock_user(callback: CallbackQuery):
             await callback.bot.send_message(user_id, caption_text, parse_mode="HTML", reply_markup=main_inline_menu(user_id))
     except Exception as e:
         print(f"Error sending to user: {e}")
+
 
