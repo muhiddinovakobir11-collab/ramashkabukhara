@@ -21,3 +21,7 @@ class AdminCameraEdit(StatesGroup):
 class AdminFAQEdit(StatesGroup):
     waiting_for_question = State()
     waiting_for_answer = State()
+
+class UserRegistration(StatesGroup):
+    waiting_for_name = State()
+    waiting_for_phone = State()

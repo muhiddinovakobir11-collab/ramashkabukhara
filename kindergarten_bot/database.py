@@ -12,9 +12,17 @@ def init_db():
             user_id INTEGER PRIMARY KEY,
             username TEXT,
             full_name TEXT,
-            is_active BOOLEAN DEFAULT 1
+            is_active BOOLEAN DEFAULT 1,
+            phone TEXT,
+            status TEXT DEFAULT 'pending'
         )
     """)
+    # Eski bazani yangilash uchun try-except ishlatamiz
+    try:
+        cursor.execute("ALTER TABLE users ADD COLUMN phone TEXT")
+        cursor.execute("ALTER TABLE users ADD COLUMN status TEXT DEFAULT 'pending'")
+    except sqlite3.OperationalError:
+        pass # Ustunlar allaqachon bor bo'lsa xato bermasligi uchun
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS settings (
             key TEXT PRIMARY KEY,
@@ -77,10 +85,6 @@ def init_db():
     conn.close()
 
 def add_user(user_id: int, username: str, full_name: str) -> bool:
-    """
-    Foydalanuvchini bazaga qo'shadi. Agar u yangi bo'lsa True, oldin bor bo'lsa False qaytaradi.
-    Shuningdek, foydalanuvchi qayta start bossa is_active = 1 qilib qo'yadi.
-    """
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
     
@@ -88,18 +92,52 @@ def add_user(user_id: int, username: str, full_name: str) -> bool:
     user = cursor.fetchone()
     
     if user is None:
+        from config import ADMIN_ID
+        status = 'approved' if str(user_id) == str(ADMIN_ID) else 'pending'
         cursor.execute(
-            "INSERT INTO users (user_id, username, full_name, is_active) VALUES (?, ?, ?, 1)",
-            (user_id, username, full_name)
+            "INSERT INTO users (user_id, username, full_name, is_active, status) VALUES (?, ?, ?, 1, ?)",
+            (user_id, username, full_name, status)
         )
         conn.commit()
         conn.close()
         return True
     else:
         cursor.execute("UPDATE users SET is_active = 1 WHERE user_id = ?", (user_id,))
+        # Adminni avtomatik tasdiqlash uchun kafolat
+        from config import ADMIN_ID
+        if str(user_id) == str(ADMIN_ID):
+            cursor.execute("UPDATE users SET status = 'approved' WHERE user_id = ?", (user_id,))
+            
         conn.commit()
         conn.close()
         return False
+
+def get_user(user_id: int) -> dict:
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+    cursor.execute("SELECT user_id, username, full_name, is_active, phone, status FROM users WHERE user_id = ?", (user_id,))
+    row = cursor.fetchone()
+    conn.close()
+    if row:
+        return {
+            "user_id": row[0], "username": row[1], "full_name": row[2],
+            "is_active": row[3], "phone": row[4], "status": row[5] or 'pending'
+        }
+    return None
+
+def update_user_auth_status(user_id: int, status: str):
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+    cursor.execute("UPDATE users SET status = ? WHERE user_id = ?", (status, user_id))
+    conn.commit()
+    conn.close()
+
+def update_user_info(user_id: int, full_name: str, phone: str):
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+    cursor.execute("UPDATE users SET full_name = ?, phone = ? WHERE user_id = ?", (full_name, phone, user_id))
+    conn.commit()
+    conn.close()
 
 def update_user_status(user_id: int, is_active: bool):
     """

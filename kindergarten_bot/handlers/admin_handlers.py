@@ -321,3 +321,38 @@ async def admin_add_faq_a(message: Message, state: FSMContext):
     database.add_faq(question, answer)
     await message.reply("✅ Yangi Savol-javob muvaffaqiyatli saqlandi! Ko'rish uchun menyuga qayting.")
     await state.clear()
+
+# ================= AUTHENTICATION MANAGEMENT =================
+@router.callback_query(F.data.startswith("auth_approve_"))
+async def admin_approve_user(callback: CallbackQuery):
+    user_id = int(callback.data.split("_")[2])
+    database.update_user_auth_status(user_id, "approved")
+    
+    await callback.message.edit_text(callback.message.html_text + "\n\n<b>✅ TASDIQLANDI</b>", parse_mode="HTML")
+    await callback.answer("Tasdiqlandi!")
+    
+    # Send main menu to user
+    from config import START_TEXT
+    from keyboards.inline_keyboards import main_inline_menu
+    from main import bot
+    try:
+        text = "🎉 <b>Tabriklaymiz, arizangiz qabul qilindi!</b>\n\nSiz endi botdan to'liq foydalanishingiz mumkin."
+        await bot.send_message(user_id, text, parse_mode="HTML")
+        await bot.send_message(user_id, START_TEXT, parse_mode="HTML", reply_markup=main_inline_menu())
+    except Exception:
+        pass
+
+@router.callback_query(F.data.startswith("auth_reject_"))
+async def admin_reject_user(callback: CallbackQuery):
+    user_id = int(callback.data.split("_")[2])
+    database.update_user_auth_status(user_id, "rejected")
+    
+    await callback.message.edit_text(callback.message.html_text + "\n\n<b>❌ RAD ETILDI</b>", parse_mode="HTML")
+    await callback.answer("Rad etildi!")
+    
+    from main import bot
+    try:
+        text = "❌ <b>Kechirasiz, sizning arizangiz ma'muriyat tomonidan rad etildi.</b>"
+        await bot.send_message(user_id, text, parse_mode="HTML")
+    except Exception:
+        pass

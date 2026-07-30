@@ -2,10 +2,11 @@ from aiogram import Router, F, Bot
 from aiogram.types import Message, CallbackQuery, FSInputFile, InputMediaPhoto, InputMediaVideo, ReplyKeyboardRemove
 from aiogram.filters import CommandStart, StateFilter
 from aiogram.fsm.context import FSMContext
-from states import UserFeedback, UserVacancy
+from states import UserFeedback, UserVacancy, UserRegistration
 from keyboards.inline_keyboards import (back_keyboard, location_keyboard, payment_groups_menu, 
                                         main_inline_menu, user_cameras_menu, user_food_days_menu, 
                                         user_faqs_menu, user_faq_back_menu)
+from keyboards.reply_keyboards import contact_keyboard
 from config import ADMIN_ID, START_VIDEO_ID
 import database
 import datetime
@@ -39,6 +40,18 @@ async def cmd_start(message: Message):
             )
         except Exception:
             pass
+
+    # Check user auth status
+    db_user = database.get_user(user_id)
+    status = db_user.get("status", "pending") if db_user else "pending"
+    
+    if str(user_id) != str(ADMIN_ID) and status != "approved":
+        if status == "rejected":
+            await message.answer("❌ <b>Sizning arizangiz ma'muriyat tomonidan rad etilgan.</b>\n\nQaytadan ariza yuborish uchun Ism va Familiyangizni kiriting:", parse_mode="HTML", reply_markup=ReplyKeyboardRemove())
+        else:
+            await message.answer("👋 <b>Xush kelibsiz!</b>\n\nBotdan foydalanish uchun ro'yxatdan o'tishingiz kerak.\nIltimos, <b>Ism va Familiyangizni</b> kiriting:", parse_mode="HTML", reply_markup=ReplyKeyboardRemove())
+        await state.set_state(UserRegistration.waiting_for_name)
+        return
 
     # Eski reply klaviaturani o'chirish uchun xabarni yuboramiz va UNI O'CHIRMAYMIZ
     await message.answer("👋 Xush kelibsiz! Barcha kerakli bo'limlar quyidagi tugmalarda joylashgan:", reply_markup=ReplyKeyboardRemove())
@@ -379,8 +392,57 @@ async def back_to_main_menu(callback: CallbackQuery, state: FSMContext):
         f"Xususiy bog'chamizning rasmiy botiga xush kelibsiz.\n\n"
         f"Botdan foydalanishingiz mumkin 😊"
     )
-    # Callbackdan kelgani uchun edit qilish qiyin, chunki oldingi xabar rasm/video bo'lishi mumkin. 
-    # Yaxshisi, yangi xabar yuboramiz.
+    # callback query handled by generic fallback if needed
+
+# ================= AUTHENTICATION HANDLERS =================
+@router.message(UserRegistration.waiting_for_name, F.text)
+async def auth_name_received(message: Message, state: FSMContext):
+    await state.update_data(reg_name=message.text)
+    await message.answer(
+        "Rahmat! Endi <b>Telefon raqamingizni</b> yuboring:",
+        parse_mode="HTML",
+        reply_markup=contact_keyboard()
+    )
+    await state.set_state(UserRegistration.waiting_for_phone)
+
+@router.message(UserRegistration.waiting_for_phone, F.contact | F.text)
+async def auth_phone_received(message: Message, state: FSMContext):
+    data = await state.get_data()
+    full_name = data.get("reg_name")
+    
+    if message.contact:
+        phone = message.contact.phone_number
+    else:
+        phone = message.text
+        
+    user_id = message.from_user.id
+    
+    database.update_user_info(user_id, full_name, phone)
+    database.update_user_auth_status(user_id, "waiting")
+    
+    await message.answer(
+        "⏳ <b>Arizangiz ma'muriyatga yuborildi.</b>\n\nIltimos, tasdiqlashlarini kuting. Tasdiqlangach sizga xabar beramiz.",
+        parse_mode="HTML",
+        reply_markup=ReplyKeyboardRemove()
+    )
+    await state.clear()
+    
+    # Adminga yuborish
+    if ADMIN_ID:
+        from keyboards.inline_keyboards import admin_approval_keyboard
+        from main import bot
+        text = (
+            f"👤 <b>Yangi foydalanuvchi ruxsat so'rayapti!</b>\n\n"
+            f"<b>Ism-familiya:</b> {full_name}\n"
+            f"<b>Telefon:</b> {phone}\n"
+            f"<b>ID:</b> {user_id}"
+        )
+        try:
+            await bot.send_message(ADMIN_ID, text, parse_mode="HTML", reply_markup=admin_approval_keyboard(user_id))
+        except Exception as e:
+            pass
+            
+# ================= OTHER HANDLERS =================
     await callback.message.delete()
     await callback.message.answer(text, reply_markup=main_inline_menu(callback.from_user.id))
     await callback.answer()

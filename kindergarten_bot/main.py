@@ -5,6 +5,7 @@ from aiogram import Bot, Dispatcher
 from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
 from config import BOT_TOKEN
 from handlers import user_handlers, registration, chat_member, admin_handlers, gallery_handlers, payment_handlers
+from middlewares.auth_middleware import AuthMiddleware
 import database
 
 # Loglarni sozlash
@@ -30,6 +31,9 @@ def main():
 
     # Baza yaratilishi/ulanishi
     database.init_db()
+
+    # Middleware
+    dp.update.middleware(AuthMiddleware())
 
     # Routerlarni ulash
     dp.include_router(chat_member.router)

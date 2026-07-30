@@ -246,3 +246,11 @@ def user_faq_back_menu():
             [InlineKeyboardButton(text="🔙 Savollarga qaytish", callback_data="faq")]
         ]
     )
+
+def admin_approval_keyboard(user_id: int):
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="✅ Tasdiqlash", callback_data=f"auth_approve_{user_id}")],
+            [InlineKeyboardButton(text="❌ Rad etish", callback_data=f"auth_reject_{user_id}")]
+        ]
+    )
