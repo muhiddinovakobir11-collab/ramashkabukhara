@@ -75,6 +75,9 @@ def admin_edit_texts_menu():
              InlineKeyboardButton(text="🎈 Bayramlar va tadbirlar", callback_data="edit_events")],
             [InlineKeyboardButton(text="🏆 Yutuqlarimiz", callback_data="edit_achievements"),
              InlineKeyboardButton(text="👗 Bog'cha formasi", callback_data="edit_dress_code")],
+            [InlineKeyboardButton(text="💬 Fikr va takliflar", callback_data="edit_feedback"),
+             InlineKeyboardButton(text="💼 Vakansiyalar", callback_data="edit_vacancies")],
+            [InlineKeyboardButton(text="👶 Farzandni yozdirish", callback_data="edit_registration")],
             [InlineKeyboardButton(text="🔙 Orqaga", callback_data="admin_panel")]
         ]
     )

@@ -68,7 +68,10 @@ async def start_editing_text(callback: CallbackQuery, state: FSMContext):
         "birthdays": "Tug'ilgan kunlar",
         "events": "Bayramlar va tadbirlar",
         "achievements": "Yutuqlarimiz",
-        "dress_code": "Bog'cha formasi"
+        "dress_code": "Bog'cha formasi",
+        "feedback": "Fikr va takliflar",
+        "vacancies": "Vakansiyalar",
+        "registration": "Farzandni yozdirish"
     }
     
     section_name = names.get(section, section)

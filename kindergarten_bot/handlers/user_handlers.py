@@ -129,7 +129,8 @@ async def dress_code_menu(callback: CallbackQuery):
 
 @router.callback_query(F.data == "registration")
 async def registration_menu(callback: CallbackQuery):
-    await callback.message.answer("👶 Farzandni yozdirish bo'limi tez kunda ishga tushadi!")
+    default_text = "👶 Farzandni yozdirish bo'limi tez kunda ishga tushadi!"
+    await send_section_media(callback, "text_registration", default_text, back_keyboard())
     await callback.answer()
 
 async def send_section_media_message(message: Message, key: str, default_text: str, markup):
@@ -302,14 +303,14 @@ async def payment_menu(callback: CallbackQuery):
 
 @router.callback_query(F.data == "feedback")
 async def feedback_prompt(callback: CallbackQuery, state: FSMContext):
-    text = (
+    default_text = (
         "💬 <b>Fikr, shikoyat va takliflar qutisi</b>\n\n"
         "Sizda bog'chamiz faoliyati haqida qanday fikr yoki shikoyatlar bor?\n"
         "Marhamat, shu yerda yozib qoldiring. Bu xat to'g'ridan-to'g'ri Adminga yetib boradi.\n\n"
         "<i>(Bekor qilish uchun 'Orqaga' tugmasini bosing)</i>"
     )
     await state.set_state(UserFeedback.waiting_for_feedback)
-    await edit_message_safe(callback.message, text, back_keyboard())
+    await send_section_media(callback, "text_feedback", default_text, back_keyboard())
     await callback.answer()
 
 @router.message(UserFeedback.waiting_for_feedback)
@@ -336,13 +337,13 @@ async def process_feedback(message: Message, state: FSMContext):
 
 @router.callback_query(F.data == "vacancies")
 async def vacancies_prompt(callback: CallbackQuery, state: FSMContext):
-    text = (
+    default_text = (
         "💼 <b>Ish o'rinlari (Vakansiyalar)</b>\n\n"
         "Bizning jamoamizga qo'shilmoqchimisiz?\n"
         "Iltimos, o'zingiz haqingizdagi ma'lumotni (rezyume, qaysi yo'nalish bo'yicha ishlamoqchisiz va telefon raqamingizni) yoki tanishtiruv videongizni shu yerga yuboring."
     )
     await state.set_state(UserVacancy.waiting_for_resume)
-    await edit_message_safe(callback.message, text, back_keyboard())
+    await send_section_media(callback, "text_vacancies", default_text, back_keyboard())
     await callback.answer()
 
 @router.message(UserVacancy.waiting_for_resume)

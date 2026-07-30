@@ -2,27 +2,15 @@ from aiogram import Router, F
 from aiogram.types import CallbackQuery, InputMediaPhoto, InputMediaVideo
 import database
 from keyboards.inline_keyboards import gallery_type_menu, gallery_categories_menu, carousel_keyboard
+from handlers.user_handlers import send_section_media
 from config import START_VIDEO_ID
 
 router = Router()
 
 @router.callback_query(F.data == "gallery")
 async def gallery_main_menu(callback: CallbackQuery):
-    text = "📸 <b>Bizning galereya</b>\n\nNimalarni ko'rmoqchisiz?"
-    
-    try:
-        if START_VIDEO_ID:
-            await callback.message.edit_media(
-                media=InputMediaVideo(media=START_VIDEO_ID, caption=text, parse_mode="HTML"), 
-                reply_markup=gallery_type_menu()
-            )
-        else:
-            await callback.message.edit_text(text, parse_mode="HTML", reply_markup=gallery_type_menu())
-    except Exception:
-        try:
-            await callback.message.edit_caption(caption=text, parse_mode="HTML", reply_markup=gallery_type_menu())
-        except Exception:
-            pass
+    default_text = "📸 <b>Bizning galereya</b>\n\nNimalarni ko'rmoqchisiz?"
+    await send_section_media(callback, "text_gallery", default_text, gallery_type_menu())
     await callback.answer()
 
 @router.callback_query(F.data.startswith("gal_type_"))
