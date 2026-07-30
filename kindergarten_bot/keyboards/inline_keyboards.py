@@ -65,9 +65,9 @@ def admin_edit_texts_menu():
             [InlineKeyboardButton(text="📸 Galereya", callback_data="edit_gallery"),
              InlineKeyboardButton(text="🕒 Kun tartibi", callback_data="edit_schedule")],
             [InlineKeyboardButton(text="👩‍🏫 Tarbiyachilar", callback_data="edit_teachers"),
-             InlineKeyboardButton(text="💬 Ko'p so'raladigan savollar", callback_data="edit_faq")],
+             InlineKeyboardButton(text="💬 Ko'p so'raladigan savollar (FAQ)", callback_data="admin_manage_faqs")],
             [InlineKeyboardButton(text="🌟 Faol o'quvchilar", callback_data="edit_active_students"),
-             InlineKeyboardButton(text="🍲 Taomnoma", callback_data="edit_food_menu")],
+             InlineKeyboardButton(text="🍲 Taomnoma (Boshqarish)", callback_data="admin_manage_food")],
             [InlineKeyboardButton(text="💳 To'lovlar qoidalari", callback_data="edit_payment")],
             [InlineKeyboardButton(text="🎥 Onlayn Kameralar (Boshqarish)", callback_data="admin_manage_cameras"),
              InlineKeyboardButton(text="🧠 Psixolog maslahati", callback_data="edit_psychologist")],
@@ -189,5 +189,60 @@ def payment_groups_menu():
             [InlineKeyboardButton(text="O'rta guruh - 1,500,000 so'm", callback_data="pay_orta")],
             [InlineKeyboardButton(text="Katta guruh - 1,600,000 so'm", callback_data="pay_katta")],
             [InlineKeyboardButton(text="🔙 Orqaga", callback_data="back_to_main")]
+        ]
+    )
+
+# ================= FOOD MENUS =================
+def admin_food_days_menu():
+    buttons = [
+        [InlineKeyboardButton(text="Dushanba", callback_data="admin_edit_food_1"),
+         InlineKeyboardButton(text="Seshanba", callback_data="admin_edit_food_2")],
+        [InlineKeyboardButton(text="Chorshanba", callback_data="admin_edit_food_3"),
+         InlineKeyboardButton(text="Payshanba", callback_data="admin_edit_food_4")],
+        [InlineKeyboardButton(text="Juma", callback_data="admin_edit_food_5")],
+        [InlineKeyboardButton(text="🔙 Orqaga", callback_data="admin_edit_texts")]
+    ]
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+def user_food_days_menu(current_day: int):
+    # current_day: 1 (Dushanba) dan 5 (Juma) gacha
+    days = ["Dushanba", "Seshanba", "Chorshanba", "Payshanba", "Juma"]
+    buttons = []
+    row = []
+    for i, day in enumerate(days, 1):
+        # Hozirgi kunni ajratib ko'rsatish
+        text = f"✅ {day}" if i == current_day else day
+        row.append(InlineKeyboardButton(text=text, callback_data=f"user_food_{i}"))
+        if len(row) == 2:
+            buttons.append(row)
+            row = []
+    if row:
+        buttons.append(row)
+    
+    buttons.append([InlineKeyboardButton(text="🔙 Orqaga", callback_data="back_to_main")])
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+# ================= FAQ MENUS =================
+def admin_faqs_menu(faqs: list):
+    buttons = []
+    for faq in faqs:
+        buttons.append([InlineKeyboardButton(text=f"🗑 {faq['question'][:30]}...", callback_data=f"admin_faq_del_{faq['id']}")])
+        
+    buttons.append([InlineKeyboardButton(text="➕ Yangi savol qo'shish", callback_data="admin_faq_add")])
+    buttons.append([InlineKeyboardButton(text="🔙 Orqaga", callback_data="admin_edit_texts")])
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+def user_faqs_menu(faqs: list):
+    buttons = []
+    for faq in faqs:
+        buttons.append([InlineKeyboardButton(text=f"🔘 {faq['question']}", callback_data=f"user_faq_{faq['id']}")])
+        
+    buttons.append([InlineKeyboardButton(text="🔙 Orqaga", callback_data="back_to_main")])
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+def user_faq_back_menu():
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="🔙 Savollarga qaytish", callback_data="faq")]
         ]
     )

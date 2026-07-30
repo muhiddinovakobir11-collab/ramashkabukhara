@@ -1,10 +1,11 @@
 from aiogram import Router, F
 from aiogram.types import CallbackQuery, Message, InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.fsm.context import FSMContext
-from states import AdminSettings, AdminGallery, AdminBroadcast, AdminCameraEdit
+from states import AdminSettings, AdminGallery, AdminBroadcast, AdminCameraEdit, AdminFAQEdit
 from keyboards.inline_keyboards import (admin_main_menu, admin_edit_texts_menu, 
                                         admin_back_keyboard, admin_gallery_type_menu, 
-                                        admin_gallery_categories_menu, admin_cameras_menu, admin_camera_edit_menu)
+                                        admin_gallery_categories_menu, admin_cameras_menu, 
+                                        admin_camera_edit_menu, admin_food_days_menu, admin_faqs_menu)
 from config import ADMIN_ID
 import database
 from handlers.user_handlers import edit_message_safe
@@ -255,4 +256,68 @@ async def save_camera_url(message: Message, state: FSMContext):
     cam = database.get_camera(cam_id)
     
     await message.reply(f"✅ <b>{cam['name']}</b> ssilkasi saqlandi!\n\nYangilangan ssilka: {url}")
+    await state.clear()
+
+# ================= FOOD MANAGEMENT =================
+@router.callback_query(F.data == "admin_manage_food")
+async def admin_manage_food(callback: CallbackQuery, state: FSMContext):
+    await state.clear()
+    text = "🍲 <b>Taomnoma (Boshqarish)</b>\n\nQaysi kunning taomnomasini o'zgartirmoqchisiz?"
+    await edit_message_safe(callback.message, text, admin_food_days_menu())
+    await callback.answer()
+
+@router.callback_query(F.data.startswith("admin_edit_food_"))
+async def start_editing_food_day(callback: CallbackQuery, state: FSMContext):
+    day_num = callback.data.split("_")[3]
+    days = {"1": "Dushanba", "2": "Seshanba", "3": "Chorshanba", "4": "Payshanba", "5": "Juma"}
+    day_name = days.get(day_num, "Noma'lum kun")
+    
+    text = (f"Siz <b>{day_name}</b> kungi taomnomasini tahrirlashni tanladingiz.\n\n"
+            "Ushbu kun uchun rasm (yoki video) va matnni yuboring:")
+            
+    await state.update_data(editing_section=f"food_{day_num}")
+    await state.set_state(AdminSettings.waiting_for_text)
+    await edit_message_safe(callback.message, text, admin_back_keyboard())
+    await callback.answer()
+
+# ================= FAQ MANAGEMENT =================
+@router.callback_query(F.data == "admin_manage_faqs")
+async def admin_manage_faqs(callback: CallbackQuery, state: FSMContext):
+    await state.clear()
+    faqs = database.get_all_faqs()
+    text = "💬 <b>Ko'p so'raladigan savollar (Boshqarish)</b>\n\nSavolni o'chirish uchun 🗑 ni bosing yoki yangi qo'shing:"
+    await edit_message_safe(callback.message, text, admin_faqs_menu(faqs))
+    await callback.answer()
+
+@router.callback_query(F.data.startswith("admin_faq_del_"))
+async def admin_delete_faq(callback: CallbackQuery):
+    faq_id = int(callback.data.split("_")[3])
+    database.delete_faq(faq_id)
+    faqs = database.get_all_faqs()
+    text = "✅ Savol o'chirildi.\n\n💬 <b>Ko'p so'raladigan savollar:</b>"
+    await edit_message_safe(callback.message, text, admin_faqs_menu(faqs))
+    await callback.answer()
+
+@router.callback_query(F.data == "admin_faq_add")
+async def admin_add_faq_start(callback: CallbackQuery, state: FSMContext):
+    text = "❓ <b>Yangi savol qo'shish</b>\n\nIltimos, ota-onalar tomonidan ko'p beriladigan savolni yozing:"
+    await state.set_state(AdminFAQEdit.waiting_for_question)
+    await edit_message_safe(callback.message, text, admin_back_keyboard())
+    await callback.answer()
+
+@router.message(AdminFAQEdit.waiting_for_question, F.text)
+async def admin_add_faq_q(message: Message, state: FSMContext):
+    await state.update_data(faq_question=message.text)
+    text = f"✅ Savol qabul qilindi.\n\nEndi ushbu savolga <b>Javobni</b> yozing:"
+    await message.reply(text)
+    await state.set_state(AdminFAQEdit.waiting_for_answer)
+
+@router.message(AdminFAQEdit.waiting_for_answer, F.text | F.photo | F.video)
+async def admin_add_faq_a(message: Message, state: FSMContext):
+    data = await state.get_data()
+    question = data.get("faq_question")
+    answer = message.html_text if message.html_text else ""
+    
+    database.add_faq(question, answer)
+    await message.reply("✅ Yangi Savol-javob muvaffaqiyatli saqlandi! Ko'rish uchun menyuga qayting.")
     await state.clear()

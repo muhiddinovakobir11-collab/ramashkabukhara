@@ -54,6 +54,25 @@ def init_db():
     if cursor.fetchone()[0] == 0:
         for i in range(1, 11):
             cursor.execute("INSERT INTO cameras (id, name, url, is_active) VALUES (?, ?, ?, 0)", (i, f"Kamera {i}", ""))
+            
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS faqs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            question TEXT,
+            answer TEXT
+        )
+    """)
+    # Insert default FAQs if empty
+    cursor.execute("SELECT count(*) FROM faqs")
+    if cursor.fetchone()[0] == 0:
+        default_faqs = [
+            ("Qabul yoshi necha?", "Biz 2 yoshdan 7 yoshgacha bo'lgan bolalarni qabul qilamiz."),
+            ("Bog'cha qaysi kunlari ishlaydi?", "Dushanbadan Juma kunigacha, soat 08:00 dan 18:00 gacha."),
+            ("Qanday hujjatlar kerak?", "Bola metrikasi, ota-ona pasport nusxasi va tibbiy ma'lumotnoma (086-forma).")
+        ]
+        for q, a in default_faqs:
+            cursor.execute("INSERT INTO faqs (question, answer) VALUES (?, ?)", (q, a))
+            
     conn.commit()
     conn.close()
 
@@ -222,5 +241,37 @@ def toggle_camera_status(camera_id: int):
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
     cursor.execute("UPDATE cameras SET is_active = NOT is_active WHERE id = ?", (camera_id,))
+    conn.commit()
+    conn.close()
+
+def get_all_faqs() -> List[dict]:
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, question, answer FROM faqs ORDER BY id ASC")
+    rows = cursor.fetchall()
+    conn.close()
+    return [{"id": r[0], "question": r[1], "answer": r[2]} for r in rows]
+
+def get_faq(faq_id: int) -> dict:
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, question, answer FROM faqs WHERE id = ?", (faq_id,))
+    row = cursor.fetchone()
+    conn.close()
+    if row:
+        return {"id": row[0], "question": row[1], "answer": row[2]}
+    return None
+
+def add_faq(question: str, answer: str):
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+    cursor.execute("INSERT INTO faqs (question, answer) VALUES (?, ?)", (question, answer))
+    conn.commit()
+    conn.close()
+
+def delete_faq(faq_id: int):
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM faqs WHERE id = ?", (faq_id,))
     conn.commit()
     conn.close()

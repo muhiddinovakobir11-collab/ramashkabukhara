@@ -17,3 +17,7 @@ class UserVacancy(StatesGroup):
 
 class AdminCameraEdit(StatesGroup):
     waiting_for_url = State()
+
+class AdminFAQEdit(StatesGroup):
+    waiting_for_question = State()
+    waiting_for_answer = State()

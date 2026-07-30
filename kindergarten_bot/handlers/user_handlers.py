@@ -3,9 +3,12 @@ from aiogram.types import Message, CallbackQuery, FSInputFile, InputMediaPhoto, 
 from aiogram.filters import CommandStart, StateFilter
 from aiogram.fsm.context import FSMContext
 from states import UserFeedback, UserVacancy
-from keyboards.inline_keyboards import back_keyboard, location_keyboard, payment_groups_menu, main_inline_menu, user_cameras_menu
+from keyboards.inline_keyboards import (back_keyboard, location_keyboard, payment_groups_menu, 
+                                        main_inline_menu, user_cameras_menu, user_food_days_menu, 
+                                        user_faqs_menu, user_faq_back_menu)
 from config import ADMIN_ID, START_VIDEO_ID
 import database
+import datetime
 
 router = Router()
 
@@ -237,16 +240,21 @@ async def teachers_menu(callback: CallbackQuery):
 
 @router.callback_query(F.data == "faq")
 async def faq_menu(callback: CallbackQuery):
-    default_text = (
-        "❓ <b>Ko'p so'raladigan savollar:</b>\n\n"
-        "<b>1. Qabul yoshi necha?</b>\n"
-        "— Biz 2 yoshdan 7 yoshgacha bo'lgan bolalarni qabul qilamiz.\n\n"
-        "<b>2. Bog'cha qaysi kunlari ishlaydi?</b>\n"
-        "— Dushanbadan Juma kunigacha, soat 08:00 dan 18:00 gacha.\n\n"
-        "<b>3. Qanday hujjatlar kerak?</b>\n"
-        "— Bola metrikasi, ota-ona pasport nusxasi va tibbiy ma'lumotnoma (086-forma)."
-    )
-    await send_section_media(callback, "text_faq", default_text, back_keyboard())
+    faqs = database.get_all_faqs()
+    if not faqs:
+        await edit_message_safe(callback.message, "Hozircha savollar yo'q.", back_keyboard())
+    else:
+        text = "❓ <b>Ko'p so'raladigan savollar:</b>\n\nSizni qaysi savol qiziqtiradi? Quyidagilardan birini tanlang:"
+        await edit_message_safe(callback.message, text, user_faqs_menu(faqs))
+    await callback.answer()
+
+@router.callback_query(F.data.startswith("user_faq_"))
+async def show_faq_answer(callback: CallbackQuery):
+    faq_id = int(callback.data.split("_")[2])
+    faq = database.get_faq(faq_id)
+    if faq:
+        text = f"❓ <b>Savol:</b> {faq['question']}\n\n💬 <b>Javob:</b> {faq['answer']}"
+        await edit_message_safe(callback.message, text, user_faq_back_menu())
     await callback.answer()
 
 @router.callback_query(F.data == "active_students")
@@ -260,37 +268,29 @@ async def active_students_menu(callback: CallbackQuery):
     await callback.answer()
 
 @router.callback_query(F.data == "food_menu")
-async def food_menu(callback: CallbackQuery):
-    default_text = (
-        "🍲 <b>Haftalik taomnoma (4 mahal issiq ovqat):</b>\n\n"
-        "📅 <b>Dushanba</b>\n"
-        "08:30 - Sutli bo'tqa, sariyog'li non, shirin choy\n"
-        "10:30 - Olma, pechenye, meva sharbati\n"
-        "12:30 - Qaynatma sho'rva, makaronli qovurma, salat\n"
-        "15:30 - Qatiq va keks\n\n"
-        "📅 <b>Seshanba</b>\n"
-        "08:30 - Shirguruch, pishloqli non, kofe (bolalar uchun)\n"
-        "10:30 - Banan, yong'oq, sharbat\n"
-        "12:30 - Borsch, grechkali kotlet, kompot\n"
-        "15:30 - Sut va bulochka\n\n"
-        "📅 <b>Chorshanba</b>\n"
-        "08:30 - Suli bo'tqasi, sariyog'li non, choy\n"
-        "10:30 - Nok, pechenye\n"
-        "12:30 - Mastava, tovuqli palov, salat\n"
-        "15:30 - Kefir va mevali pirog\n\n"
-        "📅 <b>Payshanba</b>\n"
-        "08:30 - Grechkali bo'tqa, tuxum, choy\n"
-        "10:30 - Apelsin, sharbat\n"
-        "12:30 - Tovuq sho'rva, manti (maxsus yengil), kompot\n"
-        "15:30 - Qatiq va pechenye\n\n"
-        "📅 <b>Juma</b>\n"
-        "08:30 - Qaynatilgan tuxum, sariyog'li non, shirin choy\n"
-        "10:30 - Olma va banan\n"
-        "12:30 - Ugra sho'rva, kartoshkali teftel, salat\n"
-        "15:30 - Mevali sharbat va pishiriq"
-    )
-    await send_section_media(callback, "text_food_menu", default_text, back_keyboard())
+async def food_menu_default(callback: CallbackQuery):
+    # Bugungi kunni aniqlaymiz (1=Dushanba, 7=Yakshanba)
+    weekday = datetime.datetime.now().weekday() + 1
+    # Agar shanba yoki yakshanba bo'lsa, dushanbani ko'rsatamiz
+    current_day = min(weekday, 5)
+    await show_food_day(callback, current_day)
     await callback.answer()
+
+@router.callback_query(F.data.startswith("user_food_"))
+async def food_menu_day(callback: CallbackQuery):
+    day_num = int(callback.data.split("_")[2])
+    await show_food_day(callback, day_num)
+    await callback.answer()
+
+async def show_food_day(callback: CallbackQuery, day_num: int):
+    days = {1: "Dushanba", 2: "Seshanba", 3: "Chorshanba", 4: "Payshanba", 5: "Juma"}
+    day_name = days.get(day_num, "Dushanba")
+    
+    default_text = f"🍲 <b>{day_name} kungi taomnoma:</b>\n\nTez kunda admin tomonidan kiritiladi."
+    
+    # maxsus send_section_media orqali
+    markup = user_food_days_menu(day_num)
+    await send_section_media(callback, f"text_food_{day_num}", default_text, markup)
 
 @router.callback_query(F.data == "payment")
 async def payment_menu(callback: CallbackQuery):
