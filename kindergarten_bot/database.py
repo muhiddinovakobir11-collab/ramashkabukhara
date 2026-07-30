@@ -139,6 +139,23 @@ def update_user_info(user_id: int, full_name: str, phone: str):
     conn.commit()
     conn.close()
 
+def get_approved_users() -> list:
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+    cursor.execute("SELECT user_id, username, full_name, is_active, phone FROM users WHERE status = 'approved'")
+    rows = cursor.fetchall()
+    conn.close()
+    users = []
+    for row in rows:
+        users.append({
+            "user_id": row[0],
+            "username": row[1],
+            "full_name": row[2],
+            "is_active": row[3],
+            "phone": row[4]
+        })
+    return users
+
 def update_user_status(user_id: int, is_active: bool):
     """
     Foydalanuvchi botni bloklagan (yoki unblock qilgan) bo'lsa statusni o'zgartiradi.

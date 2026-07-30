@@ -356,3 +356,69 @@ async def admin_reject_user(callback: CallbackQuery):
         await bot.send_message(user_id, text, parse_mode="HTML")
     except Exception:
         pass
+
+# ================= USER MANAGEMENT =================
+@router.message(F.text == "👥 Foydalanuvchilar", F.from_user.id.in_({int(ADMIN_ID) if ADMIN_ID else 0}))
+async def admin_users_list(message: Message):
+    users = database.get_approved_users()
+    if not users:
+        await message.answer("Tasdiqlangan foydalanuvchilar topilmadi.")
+        return
+        
+    from keyboards.inline_keyboards import admin_users_menu
+    await message.answer(
+        f"<b>👥 Ruxsat etilgan foydalanuvchilar:</b>\nJami: {len(users)} ta",
+        parse_mode="HTML",
+        reply_markup=admin_users_menu(users, page=1)
+    )
+
+@router.callback_query(F.data.startswith("admin_users_page_"))
+async def admin_users_page(callback: CallbackQuery):
+    page = int(callback.data.split("_")[3])
+    users = database.get_approved_users()
+    
+    from keyboards.inline_keyboards import admin_users_menu
+    try:
+        await callback.message.edit_reply_markup(reply_markup=admin_users_menu(users, page=page))
+    except Exception:
+        pass
+    await callback.answer()
+
+@router.callback_query(F.data.startswith("admin_user_detail_"))
+async def admin_user_detail(callback: CallbackQuery):
+    user_id = int(callback.data.split("_")[3])
+    db_user = database.get_user(user_id)
+    
+    if not db_user:
+        await callback.answer("Foydalanuvchi topilmadi!", show_alert=True)
+        return
+        
+    from keyboards.inline_keyboards import admin_user_detail_menu
+    text = (
+        f"👤 <b>Foydalanuvchi ma'lumotlari:</b>\n\n"
+        f"<b>Ismi:</b> {db_user.get('full_name', 'Noma\'lum')}\n"
+        f"<b>Telefon:</b> {db_user.get('phone', 'Kiritilmagan')}\n"
+        f"<b>Username:</b> {db_user.get('username', 'Yo\\'q')}\n"
+        f"<b>ID:</b> {user_id}"
+    )
+    await callback.message.edit_text(text, parse_mode="HTML", reply_markup=admin_user_detail_menu(user_id))
+    await callback.answer()
+
+@router.callback_query(F.data.startswith("admin_revoke_user_"))
+async def admin_revoke_user(callback: CallbackQuery):
+    user_id = int(callback.data.split("_")[3])
+    
+    if str(user_id) == str(ADMIN_ID):
+        await callback.answer("O'zingizni o'chira olmaysiz!", show_alert=True)
+        return
+        
+    database.update_user_auth_status(user_id, "rejected")
+    
+    await callback.message.edit_text(callback.message.html_text + "\n\n<b>🚫 RUXSAT BEKOR QILINDI</b>", parse_mode="HTML")
+    await callback.answer("Ruxsat bekor qilindi!")
+    
+    from main import bot
+    try:
+        await bot.send_message(user_id, "🚫 <b>Sizning botdan foydalanish ruxsatingiz ma'muriyat tomonidan bekor qilindi.</b>", parse_mode="HTML")
+    except Exception:
+        pass

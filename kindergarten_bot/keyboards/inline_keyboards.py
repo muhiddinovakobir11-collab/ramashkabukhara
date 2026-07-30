@@ -254,3 +254,32 @@ def admin_approval_keyboard(user_id: int):
             [InlineKeyboardButton(text="❌ Rad etish", callback_data=f"auth_reject_{user_id}")]
         ]
     )
+
+def admin_users_menu(users: list, page: int = 1, limit: int = 10):
+    start = (page - 1) * limit
+    end = start + limit
+    current_users = users[start:end]
+    
+    keyboard = []
+    for u in current_users:
+        name = u.get('full_name', 'Ismsiz')
+        keyboard.append([InlineKeyboardButton(text=f"👤 {name}", callback_data=f"admin_user_detail_{u['user_id']}")])
+        
+    nav_buttons = []
+    if page > 1:
+        nav_buttons.append(InlineKeyboardButton(text="⬅️ Oldingi", callback_data=f"admin_users_page_{page-1}"))
+    if end < len(users):
+        nav_buttons.append(InlineKeyboardButton(text="Keyingi ➡️", callback_data=f"admin_users_page_{page+1}"))
+        
+    if nav_buttons:
+        keyboard.append(nav_buttons)
+        
+    return InlineKeyboardMarkup(inline_keyboard=keyboard)
+
+def admin_user_detail_menu(user_id: int):
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="🚫 Ruxsatni bekor qilish", callback_data=f"admin_revoke_user_{user_id}")],
+            [InlineKeyboardButton(text="🔙 Ro'yxatga qaytish", callback_data="admin_users_page_1")]
+        ]
+    )
