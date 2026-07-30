@@ -1,4 +1,4 @@
-from aiogram import Router, F
+﻿from aiogram import Router, F
 from aiogram.types import CallbackQuery, Message, InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.fsm.context import FSMContext
 from states import AdminSettings, AdminGallery, AdminBroadcast, AdminCameraEdit, AdminFAQEdit
@@ -27,7 +27,7 @@ async def admin_panel(callback: CallbackQuery, state: FSMContext):
 
 @router.callback_query(F.data == "admin_stats")
 async def admin_stats(callback: CallbackQuery):
-    users = database.get_all_users()
+    users = await database.get_all_users()
     total_users = len(users)
     active_users = len([u for u in users if u[3] == 1])
     blocked_users = total_users - active_users
@@ -95,11 +95,11 @@ async def save_new_text(message: Message, state: FSMContext):
     new_text = message.html_text if message.html_text else ""
     
     if message.photo:
-        database.set_setting_media(f"text_{section}", "photo", message.photo[-1].file_id, new_text)
+        await database.set_setting_media(f"text_{section}", "photo", message.photo[-1].file_id, new_text)
     elif message.video:
-        database.set_setting_media(f"text_{section}", "video", message.video.file_id, new_text)
+        await database.set_setting_media(f"text_{section}", "video", message.video.file_id, new_text)
     else:
-        database.set_setting_media(f"text_{section}", "text", None, new_text)
+        await database.set_setting_media(f"text_{section}", "text", None, new_text)
     
     await message.reply(f"✅ Ma'lumot muvaffaqiyatli yangilandi!\nO'zgarishni ko'rish uchun /start tugmasini bosing.")
     await state.clear()
@@ -163,7 +163,7 @@ async def save_new_gallery_media(message: Message, state: FSMContext):
     else:
         media_id = message.video.file_id
         
-    database.add_gallery_media(category, media_type, media_id, caption)
+    await database.add_gallery_media(category, media_type, media_id, caption)
     
     await message.reply(f"✅ Muvaffaqiyatli saqlandi!\nGalereyaga kirsangiz ushbu ma'lumot oxirida paydo bo'ladi.\nYana boshqa narsa o'zgartirish uchun /start bosing.")
     await state.clear()
@@ -180,7 +180,7 @@ async def admin_broadcast_prompt(callback: CallbackQuery, state: FSMContext):
 @router.message(AdminBroadcast.waiting_for_message)
 async def process_admin_broadcast(message: Message, state: FSMContext):
     await state.clear()
-    users = database.get_all_users()
+    users = await database.get_all_users()
     active_users = [u for u in users if u[3] == 1]
     
     msg = await message.reply(f"⏳ Xabar {len(active_users)} ta foydalanuvchiga yuborilmoqda. Iltimos kuting...")
@@ -194,7 +194,7 @@ async def process_admin_broadcast(message: Message, state: FSMContext):
             await message.copy_to(user_id)
             success_count += 1
         except TelegramForbiddenError:
-            database.update_user_status(user_id, False)
+            await database.update_user_status(user_id, False)
             fail_count += 1
         except Exception:
             fail_count += 1
@@ -206,7 +206,7 @@ async def process_admin_broadcast(message: Message, state: FSMContext):
 @router.callback_query(F.data == "admin_manage_cameras")
 async def admin_manage_cameras(callback: CallbackQuery, state: FSMContext):
     await state.clear()
-    cameras = database.get_all_cameras()
+    cameras = await database.get_all_cameras()
     text = "🎥 <b>Kameralarni boshqarish</b>\n\nQaysi kamerani tahrirlamoqchisiz?"
     await edit_message_safe(callback.message, text, admin_cameras_menu(cameras))
     await callback.answer()
@@ -217,14 +217,14 @@ async def admin_camera_action(callback: CallbackQuery, state: FSMContext):
     
     if data.startswith("admin_cam_toggle_"):
         cam_id = int(data.split("_")[3])
-        database.toggle_camera_status(cam_id)
-        cam = database.get_camera(cam_id)
+        await database.toggle_camera_status(cam_id)
+        cam = await database.get_camera(cam_id)
         text = f"🎥 <b>{cam['name']}</b> holati o'zgartirildi.\n\nHozirgi ssilka: {cam['url'] if cam['url'] else 'Kiritilmagan'}"
         await edit_message_safe(callback.message, text, admin_camera_edit_menu(cam_id, cam['is_active']))
         
     elif data.startswith("admin_cam_link_"):
         cam_id = int(data.split("_")[3])
-        cam = database.get_camera(cam_id)
+        cam = await database.get_camera(cam_id)
         text = f"🔗 <b>{cam['name']}</b> uchun yangi ssilkani yuboring (Masalan: https://... yoki rtmp://...):"
         await state.update_data(editing_cam_id=cam_id)
         await state.set_state(AdminCameraEdit.waiting_for_url)
@@ -234,7 +234,7 @@ async def admin_camera_action(callback: CallbackQuery, state: FSMContext):
         # Just viewing the camera
         try:
             cam_id = int(data.split("_")[2])
-            cam = database.get_camera(cam_id)
+            cam = await database.get_camera(cam_id)
             if not cam:
                 return
             status = "🟢 Yoqilgan" if cam['is_active'] else "🔴 O'chirilgan"
@@ -252,8 +252,8 @@ async def save_camera_url(message: Message, state: FSMContext):
     cam_id = data.get("editing_cam_id")
     url = message.text.strip()
     
-    database.update_camera_url(cam_id, url)
-    cam = database.get_camera(cam_id)
+    await database.update_camera_url(cam_id, url)
+    cam = await database.get_camera(cam_id)
     
     await message.reply(f"✅ <b>{cam['name']}</b> ssilkasi saqlandi!\n\nYangilangan ssilka: {url}")
     await state.clear()
@@ -284,7 +284,7 @@ async def start_editing_food_day(callback: CallbackQuery, state: FSMContext):
 @router.callback_query(F.data == "admin_manage_faqs")
 async def admin_manage_faqs(callback: CallbackQuery, state: FSMContext):
     await state.clear()
-    faqs = database.get_all_faqs()
+    faqs = await database.get_all_faqs()
     text = "💬 <b>Ko'p so'raladigan savollar (Boshqarish)</b>\n\nSavolni o'chirish uchun 🗑 ni bosing yoki yangi qo'shing:"
     await edit_message_safe(callback.message, text, admin_faqs_menu(faqs))
     await callback.answer()
@@ -292,8 +292,8 @@ async def admin_manage_faqs(callback: CallbackQuery, state: FSMContext):
 @router.callback_query(F.data.startswith("admin_faq_del_"))
 async def admin_delete_faq(callback: CallbackQuery):
     faq_id = int(callback.data.split("_")[3])
-    database.delete_faq(faq_id)
-    faqs = database.get_all_faqs()
+    await database.delete_faq(faq_id)
+    faqs = await database.get_all_faqs()
     text = "✅ Savol o'chirildi.\n\n💬 <b>Ko'p so'raladigan savollar:</b>"
     await edit_message_safe(callback.message, text, admin_faqs_menu(faqs))
     await callback.answer()
@@ -318,7 +318,7 @@ async def admin_add_faq_a(message: Message, state: FSMContext):
     question = data.get("faq_question")
     answer = message.html_text if message.html_text else ""
     
-    database.add_faq(question, answer)
+    await database.add_faq(question, answer)
     await message.reply("✅ Yangi Savol-javob muvaffaqiyatli saqlandi! Ko'rish uchun menyuga qayting.")
     await state.clear()
 
@@ -326,7 +326,7 @@ async def admin_add_faq_a(message: Message, state: FSMContext):
 @router.callback_query(F.data.startswith("auth_approve_"))
 async def admin_approve_user(callback: CallbackQuery):
     user_id = int(callback.data.split("_")[2])
-    database.update_user_auth_status(user_id, "approved")
+    await database.update_user_auth_status(user_id, "approved")
     
     await callback.message.edit_text(callback.message.html_text + "\n\n<b>✅ TASDIQLANDI</b>", parse_mode="HTML")
     await callback.answer("Tasdiqlandi!")
@@ -366,7 +366,7 @@ async def admin_approve_user(callback: CallbackQuery):
 @router.callback_query(F.data.startswith("auth_reject_"))
 async def admin_reject_user(callback: CallbackQuery):
     user_id = int(callback.data.split("_")[2])
-    database.update_user_auth_status(user_id, "rejected")
+    await database.update_user_auth_status(user_id, "rejected")
     
     await callback.message.edit_text(callback.message.html_text + "\n\n<b>❌ RAD ETILDI</b>", parse_mode="HTML")
     await callback.answer("Rad etildi!")
@@ -397,7 +397,7 @@ async def back_to_admin_menu(callback: CallbackQuery):
 @router.callback_query(F.data.startswith("admin_users_cat_"))
 async def admin_users_category(callback: CallbackQuery):
     status = callback.data.split("_")[3]
-    users = database.get_users_by_status(status)
+    users = await database.get_users_by_status(status)
     
     if not users:
         await callback.answer(f"{'Tasdiqlangan' if status == 'approved' else 'Bloklangan'} foydalanuvchilar topilmadi.", show_alert=True)
@@ -417,7 +417,7 @@ async def admin_users_page(callback: CallbackQuery):
     parts = callback.data.split("_")
     status = parts[3]
     page = int(parts[4])
-    users = database.get_users_by_status(status)
+    users = await database.get_users_by_status(status)
     
     from keyboards.inline_keyboards import admin_users_menu
     try:
@@ -431,7 +431,7 @@ async def admin_user_detail(callback: CallbackQuery):
     parts = callback.data.split("_")
     status = parts[3]
     user_id = int(parts[4])
-    db_user = database.get_user(user_id)
+    db_user = await database.get_user(user_id)
     
     if not db_user:
         await callback.answer("Foydalanuvchi topilmadi!", show_alert=True)
@@ -459,7 +459,7 @@ async def admin_revoke_user(callback: CallbackQuery):
         await callback.answer("O'zingizni bloklay olmaysiz!", show_alert=True)
         return
         
-    database.update_user_auth_status(user_id, "rejected")
+    await database.update_user_auth_status(user_id, "rejected")
     
     from keyboards.inline_keyboards import admin_user_categories_menu
     await callback.message.edit_text(callback.message.html_text + "\n\n<b>🚫 BLOKLANDI</b>", parse_mode="HTML", reply_markup=admin_user_categories_menu())
@@ -473,7 +473,7 @@ async def admin_revoke_user(callback: CallbackQuery):
 @router.callback_query(F.data.startswith("admin_unblock_user_"))
 async def admin_unblock_user(callback: CallbackQuery):
     user_id = int(callback.data.split("_")[3])
-    database.update_user_auth_status(user_id, "approved")
+    await database.update_user_auth_status(user_id, "approved")
     
     from keyboards.inline_keyboards import admin_user_categories_menu
     await callback.message.edit_text(callback.message.html_text + "\n\n<b>✅ TASDIQLANDI</b>", parse_mode="HTML", reply_markup=admin_user_categories_menu())
@@ -499,3 +499,4 @@ async def admin_unblock_user(callback: CallbackQuery):
             await callback.bot.send_message(user_id, caption_text, parse_mode="HTML", reply_markup=main_inline_menu(user_id))
     except Exception as e:
         print(f"Error sending to user: {e}")
+

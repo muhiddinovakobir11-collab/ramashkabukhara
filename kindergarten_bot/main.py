@@ -18,7 +18,8 @@ WEBHOOK_URL = "https://ramashkabukhara.onrender.com" + WEBHOOK_PATH
 async def on_startup(bot: Bot):
     # Eski polling ulanishlarni o'chirish va Webhook o'rnatish
     await bot.set_webhook(WEBHOOK_URL, drop_pending_updates=True)
-    logging.info("Webhook muvaffaqiyatli o'rnatildi!")
+    await database.init_db()
+    logging.info("Webhook muvaffaqiyatli o'rnatildi va baza ishga tushirildi!")
 
 def main():
     if not BOT_TOKEN:
@@ -29,8 +30,7 @@ def main():
     bot = Bot(token=BOT_TOKEN)
     dp = Dispatcher()
 
-    # Baza yaratilishi/ulanishi
-    database.init_db()
+    # Baza on_startup da yaratiladi
 
     # Middleware
     dp.update.middleware(AuthMiddleware())
@@ -80,3 +80,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

@@ -1,4 +1,4 @@
-from aiogram import Router, F, Bot
+﻿from aiogram import Router, F, Bot
 from aiogram.types import Message, CallbackQuery, FSInputFile, InputMediaPhoto, InputMediaVideo, ReplyKeyboardRemove
 from aiogram.filters import CommandStart, StateFilter
 from aiogram.fsm.context import FSMContext
@@ -28,7 +28,7 @@ async def cmd_start(message: Message, state: FSMContext):
     
     user = message.from_user
     user_id = user.id
-    is_new = database.add_user(user.id, user.username, user.full_name)
+    is_new = await database.add_user(user.id, user.username, user.full_name)
     
     # Adminga faqat BOSHQA yangi odamlar kirganda xabar berish
     if is_new and ADMIN_ID and str(user.id) != str(ADMIN_ID):
@@ -45,7 +45,7 @@ async def cmd_start(message: Message, state: FSMContext):
             pass
 
     # Check user auth status
-    db_user = database.get_user(user_id)
+    db_user = await database.get_user(user_id)
     status = db_user.get("status", "pending") if db_user else "pending"
     
     if str(user_id) != str(ADMIN_ID) and status != "approved":
@@ -81,7 +81,7 @@ async def cmd_start(message: Message, state: FSMContext):
 
 @router.callback_query(F.data == "cameras")
 async def cameras_menu(callback: CallbackQuery):
-    cameras = database.get_active_cameras()
+    cameras = await database.get_active_cameras()
     if not cameras:
         default_text = (
             "🎥 <b>Onlayn Kuzatuv Kameralari</b>\n\n"
@@ -156,7 +156,7 @@ async def registration_menu(callback: CallbackQuery):
     await callback.answer()
 
 async def send_section_media_message(message: Message, key: str, default_text: str, markup):
-    data = database.get_setting_media(key, default_text)
+    data = await database.get_setting_media(key, default_text)
     text = data["text"]
     
     try:
@@ -179,7 +179,7 @@ async def get_video_id(message: Message):
         await message.reply(f"🎥 <b>Ushbu videoning maxsus ID kodi:</b>\n\n<code>{video_id}</code>\n\nBu kodni nusxalab oling va Render.com da START_VIDEO_ID qilib saqlang.", parse_mode="HTML")
 
 async def send_section_media(callback: CallbackQuery, key: str, default_text: str, markup):
-    data = database.get_setting_media(key, default_text)
+    data = await database.get_setting_media(key, default_text)
     text = data["text"]
     
     try:
@@ -259,7 +259,7 @@ async def teachers_menu(callback: CallbackQuery):
 
 @router.callback_query(F.data == "faq")
 async def faq_menu(callback: CallbackQuery):
-    faqs = database.get_all_faqs()
+    faqs = await database.get_all_faqs()
     if not faqs:
         await edit_message_safe(callback.message, "Hozircha savollar yo'q.", back_keyboard())
     else:
@@ -270,7 +270,7 @@ async def faq_menu(callback: CallbackQuery):
 @router.callback_query(F.data.startswith("user_faq_"))
 async def show_faq_answer(callback: CallbackQuery):
     faq_id = int(callback.data.split("_")[2])
-    faq = database.get_faq(faq_id)
+    faq = await database.get_faq(faq_id)
     if faq:
         text = f"❓ <b>Savol:</b> {faq['question']}\n\n💬 <b>Javob:</b> {faq['answer']}"
         await edit_message_safe(callback.message, text, user_faq_back_menu())
@@ -436,8 +436,8 @@ async def auth_phone_received(message: Message, state: FSMContext):
         
     user_id = message.from_user.id
     
-    database.update_user_info(user_id, full_name, phone)
-    database.update_user_auth_status(user_id, "waiting")
+    await database.update_user_info(user_id, full_name, phone)
+    await database.update_user_auth_status(user_id, "waiting")
     
     await message.answer(
         "⏳ <b>Arizangiz ma'muriyatga yuborildi.</b>\n\nIltimos, tasdiqlashlarini kuting. Tasdiqlangach sizga xabar beramiz.",
@@ -469,3 +469,4 @@ async def auth_phone_received(message: Message, state: FSMContext):
 async def unknown_message(message: Message):
     # Har qanday tushunarsiz matn yozilganda shu xabar chiqadi
     await message.reply("Botimizga xush kelibsiz! 😊\n\nIltimos, botdan to'liq foydalanish uchun /start komandasini bosing.")
+

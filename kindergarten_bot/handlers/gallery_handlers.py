@@ -1,4 +1,4 @@
-from aiogram import Router, F
+﻿from aiogram import Router, F
 from aiogram.types import CallbackQuery, InputMediaPhoto, InputMediaVideo
 import database
 from keyboards.inline_keyboards import gallery_type_menu, gallery_categories_menu, carousel_keyboard
@@ -35,7 +35,7 @@ async def gallery_category_selection(callback: CallbackQuery):
     category = parts[3]
     
     # Ma'lumotlarni bazadan olish
-    media_items = database.get_gallery_media(category, media_type)
+    media_items = await database.get_gallery_media(category, media_type)
     
     if not media_items:
         await callback.answer("Bu bo'limda hozircha fayllar yo'q!", show_alert=True)
@@ -52,7 +52,7 @@ async def gallery_navigation(callback: CallbackQuery):
     category = parts[3]
     index = int(parts[4])
     
-    media_items = database.get_gallery_media(category, media_type)
+    media_items = await database.get_gallery_media(category, media_type)
     
     if not media_items or index < 0 or index >= len(media_items):
         await callback.answer("Xatolik yuz berdi.", show_alert=True)
@@ -78,3 +78,4 @@ async def show_carousel_item(callback: CallbackQuery, media_type: str, category:
         await callback.message.edit_media(media=media, reply_markup=markup)
     except Exception:
         pass
+

@@ -1,4 +1,4 @@
-from aiogram import Router, F, Bot
+﻿from aiogram import Router, F, Bot
 from aiogram.types import CallbackQuery, Message, LabeledPrice, PreCheckoutQuery
 from config import PAYMENT_PROVIDER_TOKEN, ADMIN_ID
 import database
@@ -58,7 +58,7 @@ async def successful_payment_handler(message: Message, bot: Bot):
     user = message.from_user
     
     # Bazaga yozish
-    database.add_payment(
+    await database.add_payment(
         user_id=user.id,
         amount=payment_info.total_amount,
         currency=payment_info.currency,
@@ -89,3 +89,4 @@ async def successful_payment_handler(message: Message, bot: Bot):
             await bot.send_message(ADMIN_ID, admin_text, parse_mode="HTML")
         except Exception:
             pass
+
