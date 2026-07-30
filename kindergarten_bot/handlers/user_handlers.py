@@ -208,7 +208,7 @@ async def location_menu(callback: CallbackQuery):
         "<tg-emoji emoji-id=\"5368324170671202286\">📞</tg-emoji> <b>Murojaat uchun telefonlar:</b>\n"
         "+998 90 123 45 67\n"
         "+998 93 765 43 21\n\n"
-        "✉️ <b>Telegram administrator:</b> @bogcha_admin"
+        "✉️ <b>Telegram administrator:</b> @akoshprod"
     )
     await send_section_media(callback, "text_location", default_text, location_keyboard())
     await callback.answer()
