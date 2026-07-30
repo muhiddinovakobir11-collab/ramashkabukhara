@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Bog'cha Menyusi</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+        
+        :root {
+            --bg-color: var(--tg-theme-bg-color, #0f172a);
+            --text-color: var(--tg-theme-text-color, #f8fafc);
+            --primary-color: var(--tg-theme-button-color, #3b82f6);
+            --button-text: var(--tg-theme-button-text-color, #ffffff);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            padding: 20px 15px;
+            background-image: 
+                radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), 
+                radial-gradient(at 50% 0%, hsla(225,39%,30%,1) 0, transparent 50%), 
+                radial-gradient(at 100% 0%, hsla(339,49%,30%,1) 0, transparent 50%);
+            background-attachment: fixed;
+            min-height: 100vh;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            animation: fadeInDown 0.8s ease;
+        }
+
+        .header h1 {
+            font-size: 26px;
+            font-weight: 800;
+            background: linear-gradient(to right, #4facfe 0%, #00f2fe 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 5px;
+        }
+        
+        .header p {
+            font-size: 14px;
+            opacity: 0.8;
+        }
+
+        .menu-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            animation: fadeInUp 0.8s ease;
+        }
+
+        .menu-btn {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 20px 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .menu-btn::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: inherit;
+            z-index: -1;
+            filter: blur(20px);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .menu-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* Custom Gradients for specific buttons to look premium */
+        .btn-services { background: linear-gradient(135deg, rgba(236,72,153,0.1) 0%, rgba(236,72,153,0.3) 100%); border-color: rgba(236,72,153,0.3); }
+        .btn-location { background: linear-gradient(135deg, rgba(59,130,246,0.1) 0%, rgba(59,130,246,0.3) 100%); border-color: rgba(59,130,246,0.3); }
+        .btn-gallery { background: linear-gradient(135deg, rgba(139,92,246,0.1) 0%, rgba(139,92,246,0.3) 100%); border-color: rgba(139,92,246,0.3); }
+        .btn-schedule { background: linear-gradient(135deg, rgba(245,158,11,0.1) 0%, rgba(245,158,11,0.3) 100%); border-color: rgba(245,158,11,0.3); }
+        .btn-registration { grid-column: span 2; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none; box-shadow: 0 10px 25px rgba(16, 185, 129, 0.4); }
+        
+        .btn-cameras { background: linear-gradient(135deg, rgba(239,68,68,0.1) 0%, rgba(239,68,68,0.3) 100%); border-color: rgba(239,68,68,0.3); }
+        .btn-psychologist { background: linear-gradient(135deg, rgba(16,185,129,0.1) 0%, rgba(16,185,129,0.3) 100%); border-color: rgba(16,185,129,0.3); }
+        .btn-birthdays { background: linear-gradient(135deg, rgba(244,114,182,0.1) 0%, rgba(244,114,182,0.3) 100%); border-color: rgba(244,114,182,0.3); }
+        .btn-events { background: linear-gradient(135deg, rgba(251,191,36,0.1) 0%, rgba(251,191,36,0.3) 100%); border-color: rgba(251,191,36,0.3); }
+        .btn-achievements { background: linear-gradient(135deg, rgba(217,119,6,0.1) 0%, rgba(217,119,6,0.3) 100%); border-color: rgba(217,119,6,0.3); }
+        .btn-dresscode { background: linear-gradient(135deg, rgba(99,102,241,0.1) 0%, rgba(99,102,241,0.3) 100%); border-color: rgba(99,102,241,0.3); }
+
+        .emoji-icon {
+            font-size: 38px;
+            margin-bottom: 12px;
+            filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.3));
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .btn-title {
+            font-size: 14px;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-5px); }
+            100% { transform: translateY(0px); }
+        }
+
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .tg-premium-gif {
+            width: 45px;
+            height: 45px;
+            margin-bottom: 10px;
+            object-fit: cover;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>Asosiy Menyu</h1>
+        <p>O'zingizga kerakli bo'limni tanlang</p>
+    </div>
+
+    <div class="menu-grid">
+        <div class="menu-btn btn-services" onclick="sendData('services')">
+            <span class="emoji-icon">🚀</span>
+            <span class="btn-title">Xizmatlar</span>
+        </div>
+        <div class="menu-btn btn-location" onclick="sendData('location')">
+            <span class="emoji-icon">📍</span>
+            <span class="btn-title">Manzil</span>
+        </div>
+        <div class="menu-btn btn-gallery" onclick="sendData('gallery')">
+            <span class="emoji-icon">🖼</span>
+            <span class="btn-title">Galereya</span>
+        </div>
+        <div class="menu-btn btn-schedule" onclick="sendData('schedule')">
+            <span class="emoji-icon">🕒</span>
+            <span class="btn-title">Kun tartibi</span>
+        </div>
+        <div class="menu-btn" onclick="sendData('teachers')">
+            <span class="emoji-icon">👩‍🏫</span>
+            <span class="btn-title">Tarbiyachilar</span>
+        </div>
+        <div class="menu-btn" onclick="sendData('faq')">
+            <span class="emoji-icon">❓</span>
+            <span class="btn-title">Savol-javob</span>
+        </div>
+        <div class="menu-btn" onclick="sendData('active_students')">
+            <span class="emoji-icon">🌟</span>
+            <span class="btn-title">Faollar</span>
+        </div>
+        <div class="menu-btn" onclick="sendData('food_menu')">
+            <span class="emoji-icon">🍲</span>
+            <span class="btn-title">Taomnoma</span>
+        </div>
+        <div class="menu-btn" onclick="sendData('payment')">
+            <span class="emoji-icon">💳</span>
+            <span class="btn-title">To'lov qilish</span>
+        </div>
+        <div class="menu-btn" onclick="sendData('feedback')">
+            <span class="emoji-icon">💬</span>
+            <span class="btn-title">Fikr bildirish</span>
+        </div>
+        <div class="menu-btn" onclick="sendData('vacancies')">
+            <span class="emoji-icon">💼</span>
+            <span class="btn-title">Ish o'rinlari</span>
+        </div>
+        <div class="menu-btn btn-registration" onclick="sendData('registration')">
+            <span class="emoji-icon">👶</span>
+            <span class="btn-title">Farzandni yozdirish</span>
+        </div>
+        <div class="menu-btn btn-cameras" onclick="sendData('cameras')">
+            <img src="https://fonts.gstatic.com/s/e/notoemoji/latest/1f3a5/512.gif" alt="🎥" class="tg-premium-gif">
+            <span class="btn-title">Onlayn kameralar</span>
+        </div>
+        <div class="menu-btn btn-psychologist" onclick="sendData('psychologist')">
+            <img src="https://fonts.gstatic.com/s/e/notoemoji/latest/1f9e0/512.gif" alt="🧠" class="tg-premium-gif">
+            <span class="btn-title">Psixolog maslahati</span>
+        </div>
+        <div class="menu-btn btn-birthdays" onclick="sendData('birthdays')">
+            <img src="https://fonts.gstatic.com/s/e/notoemoji/latest/1f382/512.gif" alt="🎂" class="tg-premium-gif">
+            <span class="btn-title">Tug'ilgan kunlar</span>
+        </div>
+        <div class="menu-btn btn-events" onclick="sendData('events')">
+            <img src="https://fonts.gstatic.com/s/e/notoemoji/latest/1f388/512.gif" alt="🎈" class="tg-premium-gif">
+            <span class="btn-title">Bayramlar</span>
+        </div>
+        <div class="menu-btn btn-achievements" onclick="sendData('achievements')">
+            <img src="https://fonts.gstatic.com/s/e/notoemoji/latest/1f3c6/512.gif" alt="🏆" class="tg-premium-gif">
+            <span class="btn-title">Yutuqlarimiz</span>
+        </div>
+        <div class="menu-btn btn-dresscode" onclick="sendData('dress_code')">
+            <img src="https://fonts.gstatic.com/s/e/notoemoji/latest/1f457/512.gif" alt="👗" class="tg-premium-gif">
+            <span class="btn-title">Bog'cha formasi</span>
+        </div>
+    </div>
+
+    <script>
+        // Telegram Web App ni ishga tushirish
+        const tg = window.Telegram.WebApp;
+        tg.expand(); // Ekranni to'liq ochish
+
+        function sendData(action) {
+            // Telegram botga ma'lumot jo'natish
+            tg.sendData(action);
+        }
+    </script>
+</body>
+</html>
