@@ -4,7 +4,6 @@ from aiogram.filters import CommandStart, StateFilter
 from aiogram.fsm.context import FSMContext
 from states import UserFeedback, UserVacancy
 from keyboards.inline_keyboards import back_keyboard, location_keyboard, payment_groups_menu, main_inline_menu
-from keyboards.reply_keyboards import main_menu
 from config import ADMIN_ID, START_VIDEO_ID
 import database
 
@@ -50,188 +49,83 @@ async def cmd_start(message: Message):
             await message.answer_video(
                 video=START_VIDEO_ID, 
                 caption=caption_text, 
-                reply_markup=main_menu(message.from_user.id)
+                reply_markup=main_inline_menu(message.from_user.id)
             )
         except Exception:
-            await message.answer(caption_text, reply_markup=main_menu(message.from_user.id))
+            await message.answer(caption_text, reply_markup=main_inline_menu(message.from_user.id))
     else:
         # Agar video_id berilmagan bo'lsa, faqat matn yuboriladi
-        await message.answer(caption_text, reply_markup=main_menu(message.from_user.id))
+        await message.answer(caption_text, reply_markup=main_inline_menu(message.from_user.id))
 
-# WebApp ma'lumotlarini qabul qilish
-@router.message(F.web_app_data)
-async def web_app_data_handler(message: Message, state: FSMContext, bot: Bot):
-    action = message.web_app_data.data
-    
-    # Hozircha oddiy xabar orqali jo'natamiz (yoki mock callback query yaratsa ham bo'ladi, lekin message qulay)
-    if action == "services":
-        default_text = (
-            "<tg-emoji emoji-id=\"5368324170671202286\">📝</tg-emoji> <b>Xizmatlar va narxlar:</b>\n\n"
-            "Barcha xizmatlarimiz sizning farzandingiz uchun eng yaxshi sharoitlarni taqdim etishga qaratilgan.\n\n"
-            "<tg-emoji emoji-id=\"5368324170671202286\">👶</tg-emoji> Kichik guruh (2-3 yosh): 1,500,000 so'm/oy\n"
-            "<tg-emoji emoji-id=\"5368324170671202286\">🧒</tg-emoji> O'rta guruh (4-5 yosh): 1,500,000 so'm/oy\n"
-            "<tg-emoji emoji-id=\"5368324170671202286\">👦</tg-emoji> Katta guruh (6-7 yosh): 1,600,000 so'm/oy\n\n"
-            "<tg-emoji emoji-id=\"5368324170671202286\">💡</tg-emoji> <i>Narxlar ichiga 4 mahal ovqat, ingliz tili va mental arifmetika darslari kiritilgan.</i>"
-        )
-        await send_section_media_message(message, "text_services", default_text, back_keyboard())
-    elif action == "location":
-        default_text = (
-            "<tg-emoji emoji-id=\"5368324170671202286\">📍</tg-emoji> <b>Bizning manzilimiz:</b>\n\n"
-            "Buxoro shahar, Mustaqillik ko'chasi 1-uy.\n"
-            "Mo'ljal: Buxoro markaziy bog'i oldida.\n\n"
-            "<tg-emoji emoji-id=\"5368324170671202286\">📞</tg-emoji> <b>Murojaat uchun telefonlar:</b>\n"
-            "+998 90 123 45 67\n"
-            "+998 93 765 43 21\n\n"
-            "✉️ <b>Telegram administrator:</b> @bogcha_admin"
-        )
-        await send_section_media_message(message, "text_location", default_text, location_keyboard())
-    elif action == "schedule":
-        default_text = (
-            "<tg-emoji emoji-id=\"5368324170671202286\">🕒</tg-emoji> <b>Kun tartibi:</b>\n\n"
-            "08:00 - 08:30 : Bolalarni qabul qilish\n"
-            "08:30 - 09:00 : Ertalabki badantarbiya\n"
-            "09:00 - 09:30 : Nonushta\n"
-            "09:30 - 11:00 : Ta'limiy mashg'ulotlar (Ingliz tili, Logika)\n"
-            "11:00 - 12:00 : Ochiq havoda sayr va o'yinlar\n"
-            "12:00 - 13:00 : Tushlik\n"
-            "13:00 - 15:00 : Kunduzgi uyqu\n"
-            "15:00 - 15:30 : Uyqudan uyg'onish, badantarbiya\n"
-            "15:30 - 16:00 : Ikkinchi tushlik (Poldnik)\n"
-            "16:00 - 17:30 : To'garaklar va erkin o'yinlar\n"
-            "17:30 - 18:30 : Ota-onalarga kuzatish"
-        )
-        await send_section_media_message(message, "text_schedule", default_text, back_keyboard())
-    elif action == "teachers":
-        default_text = (
-            "👩‍🏫 <b>Tarbiyachilarimiz:</b>\n\n"
-            "Bizning bog'chada o'z kasbining ustasi bo'lgan, tajribali va bolajonlarni chin dildan sevadigan tarbiyachilar ishlaydi.\n\n"
-            "Ular har bir bolaga individual yondashib, ularning qobiliyatlarini ro'yobga chiqarishga yordam berishadi. Bizning jamoamiz farzandingizning ikkinchi oilasiga aylanadi!"
-        )
-        await send_section_media_message(message, "text_teachers", default_text, back_keyboard())
-    elif action == "faq":
-        default_text = (
-            "❓ <b>Ko'p so'raladigan savollar:</b>\n\n"
-            "<b>1. Qabul yoshi necha?</b>\n"
-            "— Biz 2 yoshdan 7 yoshgacha bo'lgan bolalarni qabul qilamiz.\n\n"
-            "<b>2. Bog'cha qaysi kunlari ishlaydi?</b>\n"
-            "— Dushanbadan Juma kunigacha, soat 08:00 dan 18:00 gacha.\n\n"
-            "<b>3. Qanday hujjatlar kerak?</b>\n"
-            "— Bola metrikasi, ota-ona pasport nusxasi va tibbiy ma'lumotnoma (086-forma)."
-        )
-        await send_section_media_message(message, "text_faq", default_text, back_keyboard())
-    elif action == "active_students":
-        default_text = (
-            "🌟 <b>Faol o'quvchilarimiz va yutuqlarimiz</b>\n\n"
-            "Bu yerda bog'chamizning eng intiluvchan, faol va turli tanlovlarda g'olib bo'lgan jajji bolajonlarining rasm va videolari joylab boriladi!\n\n"
-            "Tez kunda biz o'z faxrlarimizni shu bo'limda namoyish etamiz! 🏅"
-        )
-        await send_section_media_message(message, "text_active_students", default_text, back_keyboard())
-    elif action == "food_menu":
-        default_text = (
-            "🍲 <b>Haftalik taomnoma (4 mahal issiq ovqat):</b>\n\n"
-            "📅 <b>Dushanba</b>\n"
-            "08:30 - Sutli bo'tqa, sariyog'li non, shirin choy\n"
-            "10:30 - Olma, pechenye, meva sharbati\n"
-            "12:30 - Qaynatma sho'rva, makaronli qovurma, salat\n"
-            "15:30 - Qatiq va keks\n\n"
-            "📅 <b>Seshanba</b>\n"
-            "08:30 - Shirguruch, pishloqli non, kofe (bolalar uchun)\n"
-            "10:30 - Banan, yong'oq, sharbat\n"
-            "12:30 - Borsch, grechkali kotlet, kompot\n"
-            "15:30 - Sut va bulochka\n\n"
-            "📅 <b>Chorshanba</b>\n"
-            "08:30 - Suli bo'tqasi, sariyog'li non, choy\n"
-            "10:30 - Nok, pechenye\n"
-            "12:30 - Mastava, tovuqli palov, salat\n"
-            "15:30 - Kefir va mevali pirog\n\n"
-            "📅 <b>Payshanba</b>\n"
-            "08:30 - Grechkali bo'tqa, tuxum, choy\n"
-            "10:30 - Apelsin, sharbat\n"
-            "12:30 - Tovuq sho'rva, manti (maxsus yengil), kompot\n"
-            "15:30 - Qatiq va pechenye\n\n"
-            "📅 <b>Juma</b>\n"
-            "08:30 - Qaynatilgan tuxum, sariyog'li non, shirin choy\n"
-            "10:30 - Olma va banan\n"
-            "12:30 - Ugra sho'rva, kartoshkali teftel, salat\n"
-            "15:30 - Mevali sharbat va pishiriq"
-        )
-        await send_section_media_message(message, "text_food_menu", default_text, back_keyboard())
-    elif action == "payment":
-        default_text = (
-            "💳 <b>To'lov qilish:</b>\n\n"
-            "Iltimos, farzandingiz qaysi guruhda o'qishini tanlang va bot orqali avtomatik to'lovni amalga oshiring."
-        )
-        await send_section_media_message(message, "text_payment", default_text, payment_groups_menu())
-    elif action == "feedback":
-        text = (
-            "💬 <b>Fikr, shikoyat va takliflar qutisi</b>\n\n"
-            "Sizda bog'chamiz faoliyati haqida qanday fikr yoki shikoyatlar bor?\n"
-            "Marhamat, shu yerda yozib qoldiring. Bu xat to'g'ridan-to'g'ri Adminga yetib boradi.\n\n"
-            "<i>(Bekor qilish uchun 'Orqaga' tugmasini bosing)</i>"
-        )
-        await state.set_state(UserFeedback.waiting_for_feedback)
-        await message.answer(text, parse_mode="HTML", reply_markup=back_keyboard())
-    elif action == "vacancies":
-        text = (
-            "💼 <b>Ish o'rinlari (Vakansiyalar)</b>\n\n"
-            "Bizning jamoamizga qo'shilmoqchimisiz?\n"
-            "Iltimos, o'zingiz haqingizdagi ma'lumotni (rezyume, qaysi yo'nalish bo'yicha ishlamoqchisiz va telefon raqamingizni) yoki tanishtiruv videongizni shu yerga yuboring."
-        )
-        await state.set_state(UserVacancy.waiting_for_resume)
-        await message.answer(text, parse_mode="HTML", reply_markup=back_keyboard())
-    elif action == "cameras":
-        default_text = (
-            "🎥 <b>Onlayn Kuzatuv Kameralari</b>\n\n"
-            "Farzandingiz xavfsizligi va uning kun davomida nimalar bilan mashg'ul ekanligi siz uchun muhimligini bilamiz!\n\n"
-            "Onlayn kameralarga ulanish uchun maxsus login va parolni bog'cha ma'muriyatidan shaxsan olishingiz mumkin."
-        )
-        await send_section_media_message(message, "text_cameras", default_text, back_keyboard())
-    elif action == "psychologist":
-        default_text = (
-            "🧠 <b>Psixolog Maslahati</b>\n\n"
-            "Bolaning bog'chaga ilk bor kelishida uning psixologik holatini to'g'ri baholash muhim.\n\n"
-            "Bizning malakali psixologimiz har bir bola bilan individual shug'ullanib, ulardagi iqtidorlarni ro'yobga chiqarish va jamiyatga moslashishiga yordam beradi. \n\n"
-            "<i>(Psixolog qabuli uchun ma'muriyatga uchrashing)</i>"
-        )
-        await send_section_media_message(message, "text_psychologist", default_text, back_keyboard())
-    elif action == "birthdays":
-        default_text = (
-            "🎂 <b>Tug'ilgan kunlar!</b>\n\n"
-            "Ushbu oyda bog'chamizda quvonchli kunlar ko'p! Quyidagi bolajonlarimizni tug'ilgan kunlari bilan tabriklaymiz: 🎉\n\n"
-            "1. Ali (Katta guruh) - 5-Sentyabr\n"
-            "2. Ziyoda (O'rta guruh) - 12-Sentyabr\n\n"
-            "<i>(Sizning ham farzandingiz shu ro'yxatdan joy oladi!)</i>"
-        )
-        await send_section_media_message(message, "text_birthdays", default_text, back_keyboard())
-    elif action == "events":
-        default_text = (
-            "🎈 <b>Bayramlar va Tadbirlar</b>\n\n"
-            "Kelayotgan bayramlar uchun maxsus ertaliklarga tayyorgarlik ko'rilmoqda!\n\n"
-            "Tez orada ushbu sahifada bayram dasturlari, bolalar uchun ssenariylar va kiyimlar bo'yicha ma'lumotlar e'lon qilinadi."
-        )
-        await send_section_media_message(message, "text_events", default_text, back_keyboard())
-    elif action == "achievements":
-        default_text = (
-            "🏆 <b>Yutuqlarimiz va Litsenziya</b>\n\n"
-            "Bizning bog'chamiz O'zbekiston Respublikasi Maktabgacha ta'lim vazirligi tomonidan berilgan rasmiy <b>Litsenziyaga</b> ega (№123456).\n\n"
-            "Shuningdek, tarbiyachilarimiz turli ko'rik tanlovlarda qatnashib, oliy o'rinlarni egallab kelmoqdalar. Biz bilan farzandingiz ishonchli qo'llarda!"
-        )
-        await send_section_media_message(message, "text_achievements", default_text, back_keyboard())
-    elif action == "dress_code":
-        default_text = (
-            "👗 <b>Bog'cha Formasi va Kiyim-kechak</b>\n\n"
-            "Farzandingiz bog'chada o'zini qulay his qilishi uchun quyidagilarga e'tibor bering:\n\n"
-            "• Ichkarida kiyish uchun qulay shippak yoki poyabzal.\n"
-            "• Ob-havoga mos, terlatmaydigan paxtali kiyimlar.\n"
-            "• Zaxira uchun bitta to'liq kiyim (shkafda turishi uchun)."
-        )
-        await send_section_media_message(message, "text_dress_code", default_text, back_keyboard())
-    elif action == "gallery":
-        # Galereya uchun callback_data jo'natilardi. Biz endi to'g'ridan to'g'ri menyuni jo'natamiz
-        from keyboards.inline_keyboards import gallery_type_menu
-        await message.answer("📸 Galereya bo'limiga xush kelibsiz! \n\nNima ko'rmoqchisiz?", reply_markup=gallery_type_menu())
-    elif action == "registration":
-        await message.answer("👶 Farzandni yozdirish bo'limi tez kunda ishga tushadi!", reply_markup=main_menu(message.from_user.id))
+@router.callback_query(F.data == "cameras")
+async def cameras_menu(callback: CallbackQuery):
+    default_text = (
+        "🎥 <b>Onlayn Kuzatuv Kameralari</b>\n\n"
+        "Farzandingiz xavfsizligi va uning kun davomida nimalar bilan mashg'ul ekanligi siz uchun muhimligini bilamiz!\n\n"
+        "Onlayn kameralarga ulanish uchun maxsus login va parolni bog'cha ma'muriyatidan shaxsan olishingiz mumkin."
+    )
+    await send_section_media(callback, "text_cameras", default_text, back_keyboard())
+    await callback.answer()
+
+@router.callback_query(F.data == "psychologist")
+async def psychologist_menu(callback: CallbackQuery):
+    default_text = (
+        "🧠 <b>Psixolog Maslahati</b>\n\n"
+        "Bolaning bog'chaga ilk bor kelishida uning psixologik holatini to'g'ri baholash muhim.\n\n"
+        "Bizning malakali psixologimiz har bir bola bilan individual shug'ullanib, ulardagi iqtidorlarni ro'yobga chiqarish va jamiyatga moslashishiga yordam beradi. \n\n"
+        "<i>(Psixolog qabuli uchun ma'muriyatga uchrashing)</i>"
+    )
+    await send_section_media(callback, "text_psychologist", default_text, back_keyboard())
+    await callback.answer()
+
+@router.callback_query(F.data == "birthdays")
+async def birthdays_menu(callback: CallbackQuery):
+    default_text = (
+        "🎂 <b>Tug'ilgan kunlar!</b>\n\n"
+        "Ushbu oyda bog'chamizda quvonchli kunlar ko'p! Quyidagi bolajonlarimizni tug'ilgan kunlari bilan tabriklaymiz: 🎉\n\n"
+        "1. Ali (Katta guruh) - 5-Sentyabr\n"
+        "2. Ziyoda (O'rta guruh) - 12-Sentyabr\n\n"
+        "<i>(Sizning ham farzandingiz shu ro'yxatdan joy oladi!)</i>"
+    )
+    await send_section_media(callback, "text_birthdays", default_text, back_keyboard())
+    await callback.answer()
+
+@router.callback_query(F.data == "events")
+async def events_menu(callback: CallbackQuery):
+    default_text = (
+        "🎈 <b>Bayramlar va Tadbirlar</b>\n\n"
+        "Kelayotgan bayramlar uchun maxsus ertaliklarga tayyorgarlik ko'rilmoqda!\n\n"
+        "Tez orada ushbu sahifada bayram dasturlari, bolalar uchun ssenariylar va kiyimlar bo'yicha ma'lumotlar e'lon qilinadi."
+    )
+    await send_section_media(callback, "text_events", default_text, back_keyboard())
+    await callback.answer()
+
+@router.callback_query(F.data == "achievements")
+async def achievements_menu(callback: CallbackQuery):
+    default_text = (
+        "🏆 <b>Yutuqlarimiz va Litsenziya</b>\n\n"
+        "Bizning bog'chamiz O'zbekiston Respublikasi Maktabgacha ta'lim vazirligi tomonidan berilgan rasmiy <b>Litsenziyaga</b> ega (№123456).\n\n"
+        "Shuningdek, tarbiyachilarimiz turli ko'rik tanlovlarda qatnashib, oliy o'rinlarni egallab kelmoqdalar. Biz bilan farzandingiz ishonchli qo'llarda!"
+    )
+    await send_section_media(callback, "text_achievements", default_text, back_keyboard())
+    await callback.answer()
+
+@router.callback_query(F.data == "dress_code")
+async def dress_code_menu(callback: CallbackQuery):
+    default_text = (
+        "👗 <b>Bog'cha Formasi va Kiyim-kechak</b>\n\n"
+        "Farzandingiz bog'chada o'zini qulay his qilishi uchun quyidagilarga e'tibor bering:\n\n"
+        "• Ichkarida kiyish uchun qulay shippak yoki poyabzal.\n"
+        "• Ob-havoga mos, terlatmaydigan paxtali kiyimlar.\n"
+        "• Zaxira uchun bitta to'liq kiyim (shkafda turishi uchun)."
+    )
+    await send_section_media(callback, "text_dress_code", default_text, back_keyboard())
+    await callback.answer()
+
+@router.callback_query(F.data == "registration")
+async def registration_menu(callback: CallbackQuery):
+    await callback.message.answer("👶 Farzandni yozdirish bo'limi tez kunda ishga tushadi!")
+    await callback.answer()
 
 async def send_section_media_message(message: Message, key: str, default_text: str, markup):
     data = database.get_setting_media(key, default_text)
@@ -432,7 +326,7 @@ async def process_feedback(message: Message, state: FSMContext):
         except Exception:
             pass
             
-    await message.reply("✅ Xabaringiz Adminga yuborildi! Fikringiz biz uchun muhim.", reply_markup=main_menu(message.from_user.id))
+    await message.reply("✅ Xabaringiz Adminga yuborildi! Fikringiz biz uchun muhim.", reply_markup=main_inline_menu(message.from_user.id))
     await state.clear()
 
 @router.callback_query(F.data == "vacancies")
@@ -465,7 +359,7 @@ async def process_vacancy(message: Message, state: FSMContext):
         except Exception:
             pass
             
-    await message.reply("✅ Ma'lumotlaringiz Adminga yuborildi! Tez orada siz bilan bog'lanishadi.", reply_markup=main_menu(message.from_user.id))
+    await message.reply("✅ Ma'lumotlaringiz Adminga yuborildi! Tez orada siz bilan bog'lanishadi.", reply_markup=main_inline_menu(message.from_user.id))
     await state.clear()
 
 @router.callback_query(F.data == "back_to_main")
@@ -479,7 +373,7 @@ async def back_to_main_menu(callback: CallbackQuery, state: FSMContext):
     # Callbackdan kelgani uchun edit qilish qiyin, chunki oldingi xabar rasm/video bo'lishi mumkin. 
     # Yaxshisi, yangi xabar yuboramiz.
     await callback.message.delete()
-    await callback.message.answer(text, reply_markup=main_menu(callback.from_user.id))
+    await callback.message.answer(text, reply_markup=main_inline_menu(callback.from_user.id))
     await callback.answer()
 
 @router.message(F.text, StateFilter(None))

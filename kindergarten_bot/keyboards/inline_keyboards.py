@@ -14,8 +14,14 @@ def main_inline_menu(user_id: int):
          InlineKeyboardButton(text="🍲 Taomnoma", callback_data="food_menu")],
         [InlineKeyboardButton(text="💳 To'lov qilish", callback_data="payment"), 
          InlineKeyboardButton(text="💬 Fikr va takliflar", callback_data="feedback")],
+        [InlineKeyboardButton(text="🎥 Onlayn kameralar", callback_data="cameras"),
+         InlineKeyboardButton(text="🧠 Psixolog maslahati", callback_data="psychologist")],
+        [InlineKeyboardButton(text="🎂 Tug'ilgan kunlar", callback_data="birthdays"),
+         InlineKeyboardButton(text="🎈 Bayramlar", callback_data="events")],
+        [InlineKeyboardButton(text="🏆 Yutuqlarimiz", callback_data="achievements"),
+         InlineKeyboardButton(text="👗 Bog'cha formasi", callback_data="dress_code")],
         [InlineKeyboardButton(text="💼 Vakansiyalar (Ish)", callback_data="vacancies")],
-        [InlineKeyboardButton(text="👶 Farzandni yozdirish", callback_data="register")]
+        [InlineKeyboardButton(text="👶 Farzandni yozdirish", callback_data="registration")]
     ]
     
     # Faqat admin uchun tugma
