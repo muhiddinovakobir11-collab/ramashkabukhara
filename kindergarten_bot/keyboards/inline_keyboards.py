@@ -46,10 +46,11 @@ def location_keyboard():
         ]
     )
 
-def admin_main_menu():
+def admin_menu_keyboard():
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [InlineKeyboardButton(text="📊 Statistika", callback_data="admin_stats")],
+            [InlineKeyboardButton(text="👥 Foydalanuvchilarni boshqarish", callback_data="admin_manage_users")],
             [InlineKeyboardButton(text="📝 Matnlarni tahrirlash", callback_data="admin_edit_texts")],
             [InlineKeyboardButton(text="📸 Galereyani tahrirlash", callback_data="admin_edit_gallery")],
             [InlineKeyboardButton(text="📢 Xabar tarqatish (Ommaviy)", callback_data="admin_broadcast")],
@@ -255,7 +256,16 @@ def admin_approval_keyboard(user_id: int):
         ]
     )
 
-def admin_users_menu(users: list, page: int = 1, limit: int = 10):
+def admin_user_categories_menu():
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="✅ Tasdiqlanganlar", callback_data="admin_users_cat_approved")],
+            [InlineKeyboardButton(text="❌ Bloklanganlar", callback_data="admin_users_cat_rejected")],
+            [InlineKeyboardButton(text="🔙 Orqaga", callback_data="back_to_admin_menu")]
+        ]
+    )
+
+def admin_users_menu(users: list, page: int = 1, limit: int = 10, status: str = "approved"):
     start = (page - 1) * limit
     end = start + limit
     current_users = users[start:end]
@@ -263,23 +273,30 @@ def admin_users_menu(users: list, page: int = 1, limit: int = 10):
     keyboard = []
     for u in current_users:
         name = u.get('full_name', 'Ismsiz')
-        keyboard.append([InlineKeyboardButton(text=f"👤 {name}", callback_data=f"admin_user_detail_{u['user_id']}")])
+        keyboard.append([InlineKeyboardButton(text=f"👤 {name}", callback_data=f"admin_user_detail_{status}_{u['user_id']}")])
         
     nav_buttons = []
     if page > 1:
-        nav_buttons.append(InlineKeyboardButton(text="⬅️ Oldingi", callback_data=f"admin_users_page_{page-1}"))
+        nav_buttons.append(InlineKeyboardButton(text="⬅️ Oldingi", callback_data=f"admin_users_page_{status}_{page-1}"))
     if end < len(users):
-        nav_buttons.append(InlineKeyboardButton(text="Keyingi ➡️", callback_data=f"admin_users_page_{page+1}"))
+        nav_buttons.append(InlineKeyboardButton(text="Keyingi ➡️", callback_data=f"admin_users_page_{status}_{page+1}"))
         
     if nav_buttons:
         keyboard.append(nav_buttons)
         
+    keyboard.append([InlineKeyboardButton(text="🔙 Orqaga", callback_data="admin_manage_users")])
+        
     return InlineKeyboardMarkup(inline_keyboard=keyboard)
 
-def admin_user_detail_menu(user_id: int):
+def admin_user_detail_menu(user_id: int, status: str):
+    if status == "approved":
+        action_btn = InlineKeyboardButton(text="🚫 Bloklash", callback_data=f"admin_revoke_user_{user_id}")
+    else:
+        action_btn = InlineKeyboardButton(text="✅ Tasdiqlash (Ruxsat berish)", callback_data=f"admin_unblock_user_{user_id}")
+        
     return InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text="🚫 Ruxsatni bekor qilish", callback_data=f"admin_revoke_user_{user_id}")],
-            [InlineKeyboardButton(text="🔙 Ro'yxatga qaytish", callback_data="admin_users_page_1")]
+            [action_btn],
+            [InlineKeyboardButton(text="🔙 Ro'yxatga qaytish", callback_data=f"admin_users_cat_{status}")]
         ]
     )

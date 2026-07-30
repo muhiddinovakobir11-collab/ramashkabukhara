@@ -139,10 +139,10 @@ def update_user_info(user_id: int, full_name: str, phone: str):
     conn.commit()
     conn.close()
 
-def get_approved_users() -> list:
+def get_users_by_status(status: str = 'approved') -> list:
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
-    cursor.execute("SELECT user_id, username, full_name, is_active, phone FROM users WHERE status = 'approved'")
+    cursor.execute("SELECT user_id, username, full_name, is_active, phone FROM users WHERE status = ?", (status,))
     rows = cursor.fetchall()
     conn.close()
     users = []

@@ -9,7 +9,6 @@ def main_menu(user_id: int):
         [KeyboardButton(text="📱 Asosiy Menyuni Ochish", web_app=WebAppInfo(url=webapp_url))]
     ]
     if str(user_id) == str(ADMIN_ID):
-        buttons.append([KeyboardButton(text="👥 Foydalanuvchilar")])
         buttons.append([KeyboardButton(text="👨‍💻 Admin Panel (Eski usul)")])
         
     keyboard = ReplyKeyboardMarkup(

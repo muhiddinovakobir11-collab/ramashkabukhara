@@ -375,35 +375,59 @@ async def admin_reject_user(callback: CallbackQuery):
         print(f"Error sending to user: {e}")
 
 # ================= USER MANAGEMENT =================
-@router.message(F.text == "👥 Foydalanuvchilar", F.from_user.id.in_({int(ADMIN_ID) if ADMIN_ID else 0}))
-async def admin_users_list(message: Message):
-    users = database.get_approved_users()
+@router.callback_query(F.data == "admin_manage_users")
+async def admin_manage_users(callback: CallbackQuery):
+    from keyboards.inline_keyboards import admin_user_categories_menu
+    await callback.message.edit_text(
+        "👥 <b>Foydalanuvchilarni boshqarish</b>\n\nQaysi ro'yxatni ko'rmoqchisiz?",
+        parse_mode="HTML",
+        reply_markup=admin_user_categories_menu()
+    )
+    await callback.answer()
+
+@router.callback_query(F.data == "back_to_admin_menu")
+async def back_to_admin_menu(callback: CallbackQuery):
+    from keyboards.inline_keyboards import admin_menu_keyboard
+    await callback.message.edit_text("👨‍💻 <b>Admin Panel</b>\n\nQuyidagi menyulardan birini tanlang:", parse_mode="HTML", reply_markup=admin_menu_keyboard())
+    await callback.answer()
+
+@router.callback_query(F.data.startswith("admin_users_cat_"))
+async def admin_users_category(callback: CallbackQuery):
+    status = callback.data.split("_")[3]
+    users = database.get_users_by_status(status)
+    
     if not users:
-        await message.answer("Tasdiqlangan foydalanuvchilar topilmadi.")
+        await callback.answer(f"{'Tasdiqlangan' if status == 'approved' else 'Bloklangan'} foydalanuvchilar topilmadi.", show_alert=True)
         return
         
     from keyboards.inline_keyboards import admin_users_menu
-    await message.answer(
-        f"<b>👥 Ruxsat etilgan foydalanuvchilar:</b>\nJami: {len(users)} ta",
+    title = "✅ Ruxsat etilganlar" if status == "approved" else "❌ Bloklanganlar"
+    await callback.message.edit_text(
+        f"<b>{title}:</b>\nJami: {len(users)} ta",
         parse_mode="HTML",
-        reply_markup=admin_users_menu(users, page=1)
+        reply_markup=admin_users_menu(users, page=1, status=status)
     )
+    await callback.answer()
 
 @router.callback_query(F.data.startswith("admin_users_page_"))
 async def admin_users_page(callback: CallbackQuery):
-    page = int(callback.data.split("_")[3])
-    users = database.get_approved_users()
+    parts = callback.data.split("_")
+    status = parts[3]
+    page = int(parts[4])
+    users = database.get_users_by_status(status)
     
     from keyboards.inline_keyboards import admin_users_menu
     try:
-        await callback.message.edit_reply_markup(reply_markup=admin_users_menu(users, page=page))
+        await callback.message.edit_reply_markup(reply_markup=admin_users_menu(users, page=page, status=status))
     except Exception:
         pass
     await callback.answer()
 
 @router.callback_query(F.data.startswith("admin_user_detail_"))
 async def admin_user_detail(callback: CallbackQuery):
-    user_id = int(callback.data.split("_")[3])
+    parts = callback.data.split("_")
+    status = parts[3]
+    user_id = int(parts[4])
     db_user = database.get_user(user_id)
     
     if not db_user:
@@ -418,9 +442,10 @@ async def admin_user_detail(callback: CallbackQuery):
         f"<b>Ismi:</b> {db_user.get('full_name', default_name)}\n"
         f"<b>Telefon:</b> {db_user.get('phone', 'Kiritilmagan')}\n"
         f"<b>Username:</b> {db_user.get('username', default_username)}\n"
-        f"<b>ID:</b> {user_id}"
+        f"<b>ID:</b> <code>{user_id}</code>\n"
+        f"<b>Holati:</b> {'✅ Tasdiqlangan' if status == 'approved' else '❌ Bloklangan'}"
     )
-    await callback.message.edit_text(text, parse_mode="HTML", reply_markup=admin_user_detail_menu(user_id))
+    await callback.message.edit_text(text, parse_mode="HTML", reply_markup=admin_user_detail_menu(user_id, status))
     await callback.answer()
 
 @router.callback_query(F.data.startswith("admin_revoke_user_"))
@@ -428,15 +453,46 @@ async def admin_revoke_user(callback: CallbackQuery):
     user_id = int(callback.data.split("_")[3])
     
     if str(user_id) == str(ADMIN_ID):
-        await callback.answer("O'zingizni o'chira olmaysiz!", show_alert=True)
+        await callback.answer("O'zingizni bloklay olmaysiz!", show_alert=True)
         return
         
     database.update_user_auth_status(user_id, "rejected")
     
-    await callback.message.edit_text(callback.message.html_text + "\n\n<b>🚫 RUXSAT BEKOR QILINDI</b>", parse_mode="HTML")
-    await callback.answer("Ruxsat bekor qilindi!")
+    from keyboards.inline_keyboards import admin_user_categories_menu
+    await callback.message.edit_text(callback.message.html_text + "\n\n<b>🚫 BLOKLANDI</b>", parse_mode="HTML", reply_markup=admin_user_categories_menu())
+    await callback.answer("Foydalanuvchi bloklandi!")
     
     try:
         await callback.bot.send_message(user_id, "🚫 <b>Sizning botdan foydalanish ruxsatingiz ma'muriyat tomonidan bekor qilindi.</b>", parse_mode="HTML")
+    except Exception as e:
+        print(f"Error sending to user: {e}")
+
+@router.callback_query(F.data.startswith("admin_unblock_user_"))
+async def admin_unblock_user(callback: CallbackQuery):
+    user_id = int(callback.data.split("_")[3])
+    database.update_user_auth_status(user_id, "approved")
+    
+    from keyboards.inline_keyboards import admin_user_categories_menu
+    await callback.message.edit_text(callback.message.html_text + "\n\n<b>✅ TASDIQLANDI</b>", parse_mode="HTML", reply_markup=admin_user_categories_menu())
+    await callback.answer("Foydalanuvchi tasdiqlandi!")
+    
+    from config import START_VIDEO_ID
+    from keyboards.inline_keyboards import main_inline_menu
+    try:
+        text = "🎉 <b>Tabriklaymiz, ma'muriyat sizga botdan yana foydalanishga ruxsat berdi!</b>"
+        await callback.bot.send_message(user_id, text, parse_mode="HTML")
+        
+        caption_text = (
+            "Assalomu alaykum!\n"
+            "Xususiy bog'chamizning rasmiy botiga xush kelibsiz.\n\n"
+            "Botdan foydalanishingiz mumkin 😊"
+        )
+        if START_VIDEO_ID:
+            try:
+                await callback.bot.send_video(chat_id=user_id, video=START_VIDEO_ID, caption=caption_text, parse_mode="HTML", reply_markup=main_inline_menu(user_id))
+            except Exception:
+                await callback.bot.send_message(user_id, caption_text, parse_mode="HTML", reply_markup=main_inline_menu(user_id))
+        else:
+            await callback.bot.send_message(user_id, caption_text, parse_mode="HTML", reply_markup=main_inline_menu(user_id))
     except Exception as e:
         print(f"Error sending to user: {e}")
