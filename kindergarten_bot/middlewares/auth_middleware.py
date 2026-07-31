@@ -21,9 +21,10 @@ class AuthMiddleware(BaseMiddleware):
         if str(user.id) == str(ADMIN_ID).strip():
             return await handler(event, data)
             
-        db_user = database.get_user(user.id)
+        db_user = await database.get_user(user.id)
         if not db_user:
             return await handler(event, data)
+
             
         status = db_user.get("status", "pending")
         if status == "approved":
