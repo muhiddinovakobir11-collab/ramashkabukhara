@@ -1,4 +1,4 @@
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+﻿from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from config import ADMIN_ID
 
 def main_inline_menu(user_id: int):
@@ -365,5 +365,15 @@ def admin_attendance_submenu():
             [InlineKeyboardButton(text="📝 Matn/rasmni tahrirlash", callback_data="edit_text_attendance")],
             [InlineKeyboardButton(text="⏳ Kechikish tugmalari", callback_data="admin_late_btns")],
             [InlineKeyboardButton(text="🔙 Orqaga", callback_data="admin_edit_texts")]
+        ]
+    )
+
+
+def parent_role_keyboard():
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="🧔 Otasi", callback_data="role_otasi"),
+             InlineKeyboardButton(text="👩‍🦰 Onasi", callback_data="role_onasi")],
+            [InlineKeyboardButton(text="👴 Boshqa qarindoshi", callback_data="role_boshqa")]
         ]
     )

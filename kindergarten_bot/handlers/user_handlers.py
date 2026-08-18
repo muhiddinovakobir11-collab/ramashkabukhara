@@ -585,12 +585,41 @@ async def educator_contact_menu(callback: CallbackQuery):
 @router.callback_query(F.data == "contact_educator_start")
 async def start_educator_contact(callback: CallbackQuery, state: FSMContext):
     from states import UserEducatorContact
-    await callback.message.answer("✍️ Xabaringizni yozib yuboring:")
+    await callback.message.answer("📝 Iltimos, farzandingizning ism-familiyasini yozib yuboring (Masalan: <i>Ali Valiyev</i>):", parse_mode="HTML")
+    await state.set_state(UserEducatorContact.waiting_for_child_name)
+    await callback.answer()
+
+@router.message(StateFilter("UserEducatorContact:waiting_for_child_name"), F.text)
+async def process_child_name(message: Message, state: FSMContext):
+    from states import UserEducatorContact
+    await state.update_data(child_name=message.text)
+    
+    from keyboards.inline_keyboards import parent_role_keyboard
+    await message.answer("Siz kimsiz?", reply_markup=parent_role_keyboard())
+    await state.set_state(UserEducatorContact.waiting_for_parent_role)
+
+@router.callback_query(StateFilter("UserEducatorContact:waiting_for_parent_role"), F.data.startswith("role_"))
+async def process_parent_role(callback: CallbackQuery, state: FSMContext):
+    from states import UserEducatorContact
+    
+    roles = {
+        "role_otasi": "Otasi",
+        "role_onasi": "Onasi",
+        "role_boshqa": "Boshqa qarindoshi"
+    }
+    role = roles.get(callback.data, "Noma'lum")
+    await state.update_data(parent_role=role)
+    
+    await callback.message.answer("💬 Endi tarbiyachiga aytmoqchi bo'lgan xabaringizni yozib yuboring:")
     await state.set_state(UserEducatorContact.waiting_for_message)
     await callback.answer()
 
-@router.message(StateFilter("UserEducatorContact:waiting_for_message"))
+@router.message(StateFilter("UserEducatorContact:waiting_for_message"), F.text)
 async def process_educator_message(message: Message, state: FSMContext):
+    data = await state.get_data()
+    child_name = data.get("child_name", "Noma'lum")
+    parent_role = data.get("parent_role", "Noma'lum")
+    
     user_name = message.from_user.full_name
     username = f"@{message.from_user.username}" if message.from_user.username else "yo'q"
     
@@ -598,13 +627,18 @@ async def process_educator_message(message: Message, state: FSMContext):
         try:
             await message.bot.send_message(
                 chat_id=ADMIN_ID,
-                text=f"💬 <b>Tarbiyachiga yangi xabar!</b>\n\n👤 Kimdan: {user_name} ({username})\n\n📝 Xabar:\n{message.text}",
+                text=(
+                    f"📩 <b>Tarbiyachiga yangi xabar keldi!</b>\n\n"
+                    f"👦 <b>Farzandi:</b> {child_name}\n"
+                    f"👤 <b>Yuboruvchi:</b> {parent_role} — {user_name} ({username})\n"
+                    f"💬 <b>Xabar:</b>\n{message.text}"
+                ),
                 parse_mode="HTML"
             )
         except Exception:
             pass
             
-    await message.reply("✅ Xabaringiz muvaffaqiyatli yetkazildi!", reply_markup=ReplyKeyboardRemove())
+    await message.reply("✅ Xabaringiz muvaffaqiyatli qabul qilindi va adminga yetkazildi!", reply_markup=ReplyKeyboardRemove())
     await state.clear()
 
 @router.callback_query(F.data == "polls")
