@@ -321,21 +321,21 @@ def attendance_action_keyboard():
         inline_keyboard=[
             [InlineKeyboardButton(text="🤒 Bugun borolmaydi", callback_data="att_absent")],
             [InlineKeyboardButton(text="⏰ Kechikib boradi", callback_data="att_late")],
-            [InlineKeyboardButton(text="🔙 Orqaga", callback_data="main_menu")]
+            [InlineKeyboardButton(text="🔙 Orqaga", callback_data="back_to_main")]
         ]
     )
 def educator_contact_keyboard():
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [InlineKeyboardButton(text="✍️ Xabar yozish", callback_data="contact_educator_start")],
-            [InlineKeyboardButton(text="🔙 Orqaga", callback_data="main_menu")]
+            [InlineKeyboardButton(text="🔙 Orqaga", callback_data="back_to_main")]
         ]
     )
 def polls_action_keyboard():
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [InlineKeyboardButton(text="🗳 So`rovnomani boshlash", callback_data="polls_start")],
-            [InlineKeyboardButton(text="🔙 Orqaga", callback_data="main_menu")]
+            [InlineKeyboardButton(text="🔙 Orqaga", callback_data="back_to_main")]
         ]
     )
 
@@ -355,7 +355,7 @@ async def attendance_late_keyboard():
             [InlineKeyboardButton(text=btn3, callback_data="late_20"),
              InlineKeyboardButton(text=btn4, callback_data="late_60")],
             [InlineKeyboardButton(text="✍️ O'zim yozaman", callback_data="late_manual")],
-            [InlineKeyboardButton(text="🔙 Orqaga", callback_data="main_menu")]
+            [InlineKeyboardButton(text="🔙 Orqaga", callback_data="back_to_main")]
         ]
     )
 
