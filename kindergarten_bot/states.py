@@ -28,6 +28,8 @@ class UserRegistration(StatesGroup):
     waiting_for_phone = State()
 
 class UserEducatorContact(StatesGroup):
+    waiting_for_child_name = State()
+    waiting_for_parent_role = State()
     waiting_for_message = State()
 
 class UserPoll(StatesGroup):
@@ -37,6 +39,7 @@ class UserPoll(StatesGroup):
 class UserAttendance(StatesGroup):
     waiting_for_reason = State()
     waiting_for_late_time = State()
+
 
 
 
