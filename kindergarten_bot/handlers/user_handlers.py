@@ -8,6 +8,21 @@ from keyboards.inline_keyboards import (back_keyboard, location_keyboard, paymen
                                         user_faqs_menu, user_faq_back_menu)
 from keyboards.reply_keyboards import contact_keyboard
 from config import ADMIN_ID, START_VIDEO_ID
+import re
+from datetime import datetime, timedelta
+
+def parse_time_to_delta(time_str: str):
+    time_str = time_str.lower()
+    minutes = 0
+    m_min = re.search(r'(\d+)\s*(minut|daqiqa|m)', time_str)
+    if m_min:
+        minutes += int(m_min.group(1))
+    m_hour = re.search(r'(\d+)\s*(soat|s)', time_str)
+    if m_hour:
+        minutes += int(m_hour.group(1)) * 60
+    if minutes > 0:
+        return timedelta(minutes=minutes)
+    return None
 import database
 import datetime
 import asyncio
@@ -528,17 +543,32 @@ async def attendance_late_quick(callback: CallbackQuery):
     user_name = callback.from_user.full_name
     username = f"@{callback.from_user.username}" if callback.from_user.username else "yo'q"
     
+    delta = parse_time_to_delta(time_str)
+    
+    base_admin_text = f"🚨 <b>Davomat xabari!</b>\n\n👤 Ota-ona: {user_name} ({username})\nHolat: <b>⏰ Kech qoladi</b>\n\n⏱ Qancha vaqtga: <b>{time_str}</b>"
+    base_user_text = f"✅ Xo'p rahmat, farzandingizni kutamiz!\n\nHolat: <b>⏰ Kechikish ({time_str})</b>"
+    
     if ADMIN_ID:
         try:
-            await callback.bot.send_message(
+            admin_msg = await callback.bot.send_message(
                 chat_id=ADMIN_ID,
-                text=f"🚨 <b>Davomat xabari!</b>\n\n👤 Ota-ona: {user_name} ({username})\nHolat: <b>⏰ Kech qoladi</b>\n\n⏱ Qancha vaqtga: <b>{time_str}</b>",
+                text=base_admin_text + (f"\n\n🔄 <b>Qolgan vaqt: {int(delta.total_seconds()//60)} daqiqa...</b>" if delta else ""),
                 parse_mode="HTML"
             )
+            if delta:
+                end_time = datetime.now() + delta
+                await database.add_timer(ADMIN_ID, admin_msg.message_id, end_time.isoformat(), base_admin_text)
         except Exception:
             pass
             
-    await callback.message.answer("✅ Xo'p rahmat, farzandingizni kutamiz!", reply_markup=ReplyKeyboardRemove())
+    user_msg = await callback.message.answer(
+        base_user_text + (f"\n\n🔄 <b>Qolgan vaqt: {int(delta.total_seconds()//60)} daqiqa...</b>" if delta else ""), 
+        reply_markup=ReplyKeyboardRemove()
+    )
+    if delta:
+        end_time = datetime.now() + delta
+        await database.add_timer(callback.message.chat.id, user_msg.message_id, end_time.isoformat(), base_user_text)
+        
     await callback.answer()
 
 @router.callback_query(F.data == "late_manual")
@@ -558,25 +588,38 @@ async def process_attendance_text(message: Message, state: FSMContext):
     reason = message.text
     
     current_state = await state.get_state()
-    field_name = "⏱ Vaqti" if current_state == "UserAttendance:waiting_for_late_time" else "📝 Sababi"
+    field_name = "⏱ Vaqti" if current_state == "UserAttendance:waiting_for_late_time" else "💬 Sababi"
     
     user_name = message.from_user.full_name
     username = f"@{message.from_user.username}" if message.from_user.username else "yo'q"
     
+    delta = None
+    if current_state == "UserAttendance:waiting_for_late_time":
+        delta = parse_time_to_delta(reason)
+        
+    base_admin_text = f"🚨 <b>Davomat xabari!</b>\n\n👤 Ota-ona: {user_name} ({username})\nHolat: <b>{status}</b>\n\n{field_name}: <b>{reason}</b>"
+    base_user_text = f"✅ Xo'p rahmat, farzandingizni kutamiz!\n\nHolat: <b>{status} ({reason})</b>"
+    
     if ADMIN_ID:
         try:
-            await message.bot.send_message(
+            admin_msg = await message.bot.send_message(
                 chat_id=ADMIN_ID,
-                text=f"🚨 <b>Davomat xabari!</b>\n\n👤 Ota-ona: {user_name} ({username})\nHolat: <b>{status}</b>\n\n{field_name}: <b>{reason}</b>",
+                text=base_admin_text + (f"\n\n🔄 <b>Qolgan vaqt: {int(delta.total_seconds()//60)} daqiqa...</b>" if delta else ""),
                 parse_mode="HTML"
             )
+            if delta:
+                end_time = datetime.now() + delta
+                await database.add_timer(ADMIN_ID, admin_msg.message_id, end_time.isoformat(), base_admin_text)
         except Exception:
             pass
             
-    if current_state == "UserAttendance:waiting_for_late_time":
-        await message.reply("✅ Xo'p rahmat, farzandingizni kutamiz!", reply_markup=ReplyKeyboardRemove())
-    else:
-        await message.reply("✅ Sabab qabul qilindi va adminga yetkazildi. Rahmat!", reply_markup=ReplyKeyboardRemove())
+    user_msg = await message.reply(
+        base_user_text + (f"\n\n🔄 <b>Qolgan vaqt: {int(delta.total_seconds()//60)} daqiqa...</b>" if delta else ""), 
+        reply_markup=ReplyKeyboardRemove()
+    )
+    if delta:
+        end_time = datetime.now() + delta
+        await database.add_timer(message.chat.id, user_msg.message_id, end_time.isoformat(), base_user_text)
         
     await state.clear()
 
@@ -716,4 +759,6 @@ async def process_poll_feedback(message: Message, state: FSMContext):
             
     await message.reply("✅ Fikringiz uchun katta rahmat! Bu biz uchun juda muhim.", reply_markup=ReplyKeyboardRemove())
     await state.clear()
+
+
 

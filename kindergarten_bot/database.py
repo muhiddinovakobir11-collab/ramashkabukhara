@@ -6,6 +6,13 @@ DB_NAME = "kindergarten.db"
 
 async def init_db():
     async with aiosqlite.connect(DB_NAME) as db:
+                await db.execute('''CREATE TABLE IF NOT EXISTS timers (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            chat_id INTEGER,
+            message_id INTEGER,
+            end_time TIMESTAMP,
+            base_text TEXT
+        )''')
         await db.execute('''CREATE TABLE IF NOT EXISTS educators (id INTEGER PRIMARY KEY AUTOINCREMENT, group_name TEXT, educator_id TEXT)''')
         await db.execute("""
             CREATE TABLE IF NOT EXISTS users (
@@ -340,4 +347,22 @@ async def add_educator(group_name: str, educator_id: str):
 async def delete_educator(db_id: int):
     async with aiosqlite.connect(DB_NAME) as db:
         await db.execute('DELETE FROM educators WHERE id=?', (db_id,))
+        await db.commit()
+
+
+async def add_timer(chat_id: int, message_id: int, end_time, base_text: str):
+    async with aiosqlite.connect(DB_NAME) as db:
+        await db.execute('INSERT INTO timers (chat_id, message_id, end_time, base_text) VALUES (?, ?, ?, ?)', 
+                         (chat_id, message_id, end_time, base_text))
+        await db.commit()
+
+async def get_active_timers():
+    async with aiosqlite.connect(DB_NAME) as db:
+        async with db.execute('SELECT id, chat_id, message_id, end_time, base_text FROM timers') as cursor:
+            results = await cursor.fetchall()
+            return [{"id": r[0], "chat_id": r[1], "message_id": r[2], "end_time": r[3], "base_text": r[4]} for r in results]
+
+async def delete_timer(timer_id: int):
+    async with aiosqlite.connect(DB_NAME) as db:
+        await db.execute('DELETE FROM timers WHERE id=?', (timer_id,))
         await db.commit()
