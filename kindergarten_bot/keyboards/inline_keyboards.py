@@ -1,4 +1,5 @@
 ﻿from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 from config import ADMIN_ID
 
 def main_inline_menu(user_id: int):
@@ -406,3 +407,4 @@ def poll_stars_keyboard():
         InlineKeyboardButton(text="⭐⭐⭐⭐⭐ 5", callback_data="poll_star_5")
     )
     return builder.as_markup()
+
