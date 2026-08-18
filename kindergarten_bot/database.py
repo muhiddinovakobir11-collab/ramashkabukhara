@@ -6,6 +6,7 @@ DB_NAME = "kindergarten.db"
 
 async def init_db():
     async with aiosqlite.connect(DB_NAME) as db:
+        await db.execute('''CREATE TABLE IF NOT EXISTS educators (id INTEGER PRIMARY KEY AUTOINCREMENT, group_name TEXT, educator_id TEXT)''')
         await db.execute("""
             CREATE TABLE IF NOT EXISTS users (
                 user_id INTEGER PRIMARY KEY,
@@ -318,33 +319,25 @@ async def get_latest_broadcast_id() -> int:
 
 
 async def get_all_educators():
-    conn = sqlite3.connect(DB_NAME)
-    cursor = conn.cursor()
-    cursor.execute('SELECT id, group_name, educator_id FROM educators')
-    results = cursor.fetchall()
-    conn.close()
-    return [{"id": r[0], "group_name": r[1], "educator_id": r[2]} for r in results]
+    async with aiosqlite.connect(DB_NAME) as db:
+        async with db.execute('SELECT id, group_name, educator_id FROM educators') as cursor:
+            results = await cursor.fetchall()
+            return [{"id": r[0], "group_name": r[1], "educator_id": r[2]} for r in results]
 
 async def get_educator(educator_id: int):
-    conn = sqlite3.connect(DB_NAME)
-    cursor = conn.cursor()
-    cursor.execute('SELECT id, group_name, educator_id FROM educators WHERE id=?', (educator_id,))
-    result = cursor.fetchone()
-    conn.close()
-    if result:
-        return {"id": result[0], "group_name": result[1], "educator_id": result[2]}
-    return None
+    async with aiosqlite.connect(DB_NAME) as db:
+        async with db.execute('SELECT id, group_name, educator_id FROM educators WHERE id=?', (educator_id,)) as cursor:
+            result = await cursor.fetchone()
+            if result:
+                return {"id": result[0], "group_name": result[1], "educator_id": result[2]}
+            return None
 
 async def add_educator(group_name: str, educator_id: str):
-    conn = sqlite3.connect(DB_NAME)
-    cursor = conn.cursor()
-    cursor.execute('INSERT INTO educators (group_name, educator_id) VALUES (?, ?)', (group_name, educator_id))
-    conn.commit()
-    conn.close()
+    async with aiosqlite.connect(DB_NAME) as db:
+        await db.execute('INSERT INTO educators (group_name, educator_id) VALUES (?, ?)', (group_name, educator_id))
+        await db.commit()
 
 async def delete_educator(db_id: int):
-    conn = sqlite3.connect(DB_NAME)
-    cursor = conn.cursor()
-    cursor.execute('DELETE FROM educators WHERE id=?', (db_id,))
-    conn.commit()
-    conn.close()
+    async with aiosqlite.connect(DB_NAME) as db:
+        await db.execute('DELETE FROM educators WHERE id=?', (db_id,))
+        await db.commit()
