@@ -545,8 +545,9 @@ async def attendance_late_quick(callback: CallbackQuery):
     
     delta = parse_time_to_delta(time_str)
     
-    base_admin_text = f"🚨 <b>Davomat xabari!</b>\n\n👤 Ota-ona: {user_name} ({username})\nHolat: <b>⏰ Kech qoladi</b>\n\n⏱ Qancha vaqtga: <b>{time_str}</b>"
-    base_user_text = f"✅ Xo'p rahmat, farzandingizni kutamiz!\n\nHolat: <b>⏰ Kechikish ({time_str})</b>"
+    debug_text = f"\n\nDEBUG: delta={repr(delta)}, time_str={repr(time_str)}"
+    base_admin_text = f"🚨 <b>Davomat xabari!</b>\n\n👤 Ota-ona: {user_name} ({username})\nHolat: <b>⏰ Kech qoladi</b>\n\n⏱ Qancha vaqtga: <b>{time_str}</b>" + debug_text
+    base_user_text = f"✅ Xo'p rahmat, farzandingizni kutamiz!\n\nHolat: <b>⏰ Kechikish ({time_str})</b>" + debug_text
     
     if ADMIN_ID:
         try:
