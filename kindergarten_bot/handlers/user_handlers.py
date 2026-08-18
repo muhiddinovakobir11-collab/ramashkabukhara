@@ -480,35 +480,79 @@ async def attendance_menu(callback: CallbackQuery):
     await callback.answer()
 
 async def remind_reason(user_id: int, state: FSMContext, bot: Bot):
-    for _ in range(15): # 45 minutgacha eslatadi (15 marta)
+    for _ in range(15): # 45 minutgacha eslatadi
         await asyncio.sleep(180) # 3 minut
         current_state = await state.get_state()
-        if current_state != "UserAttendance:waiting_for_reason":
+        if current_state not in ["UserAttendance:waiting_for_reason", "UserAttendance:waiting_for_late_time"]:
             break
         try:
-            await bot.send_message(user_id, "❗️ Hurmatli ota-ona, iltimos farzandingiz kela olmasligi (yoki kechikishi) sababini yozib yuboring:")
+            if current_state == "UserAttendance:waiting_for_reason":
+                await bot.send_message(user_id, "❗️ Hurmatli ota-ona, iltimos farzandingiz kela olmasligi sababini yozib yuboring:")
+            else:
+                await bot.send_message(user_id, "❗️ Hurmatli ota-ona, iltimos farzandingiz qancha vaqt kechikishini yozib yuboring:")
         except Exception:
             break
 
-@router.callback_query(F.data.in_(["att_absent", "att_late"]))
-async def attendance_action(callback: CallbackQuery, state: FSMContext):
-    status = "🤒 Kasal / Kela olmaydi" if callback.data == "att_absent" else "⏰ Kech qoladi"
-    
+@router.callback_query(F.data == "att_absent")
+async def attendance_absent_action(callback: CallbackQuery, state: FSMContext):
     from states import UserAttendance
-    await state.update_data(att_status=status)
+    await state.update_data(att_status="🤒 Kasal / Kela olmaydi")
     await state.set_state(UserAttendance.waiting_for_reason)
     
-    await callback.message.answer(f"Iltimos, farzandingiz nima sababdan <b>{status.lower()}</b>gini qisqacha yozib yuboring (Masalan: 'Toblari qochdi', 'Qishloqqa ketdik'):", parse_mode="HTML")
+    await callback.message.answer("Iltimos, farzandingiz nima sababdan <b>kela olmasligini</b> qisqacha yozib yuboring (Masalan: 'Toblari qochdi', 'Qishloqqa ketdik'):", parse_mode="HTML")
     await callback.answer()
-    
-    # Orqa fonda 3 minutda bir eslatuvchi taskni ishga tushiramiz
     asyncio.create_task(remind_reason(callback.from_user.id, state, callback.bot))
 
-@router.message(StateFilter("UserAttendance:waiting_for_reason"))
-async def process_attendance_reason(message: Message, state: FSMContext):
+@router.callback_query(F.data == "att_late")
+async def attendance_late_menu(callback: CallbackQuery):
+    from keyboards.inline_keyboards import attendance_late_keyboard
+    await callback.message.answer("⏳ Farzandingiz qancha vaqt kechikadi?", reply_markup=attendance_late_keyboard())
+    await callback.answer()
+
+@router.callback_query(F.data.in_(["late_10", "late_15", "late_20", "late_60"]))
+async def attendance_late_quick(callback: CallbackQuery):
+    time_map = {
+        "late_10": "10 minut",
+        "late_15": "15 minut",
+        "late_20": "20 minut",
+        "late_60": "1 soat"
+    }
+    time_str = time_map[callback.data]
+    
+    user_name = callback.from_user.full_name
+    username = f"@{callback.from_user.username}" if callback.from_user.username else "yo'q"
+    
+    if ADMIN_ID:
+        try:
+            await callback.bot.send_message(
+                chat_id=ADMIN_ID,
+                text=f"🚨 <b>Davomat xabari!</b>\n\n👤 Ota-ona: {user_name} ({username})\nHolat: <b>⏰ Kech qoladi</b>\n\n⏱ Qancha vaqtga: <b>{time_str}</b>",
+                parse_mode="HTML"
+            )
+        except Exception:
+            pass
+            
+    await callback.message.answer("✅ Xo'p rahmat, farzandingizni kutamiz!", reply_markup=ReplyKeyboardRemove())
+    await callback.answer()
+
+@router.callback_query(F.data == "late_manual")
+async def attendance_late_manual(callback: CallbackQuery, state: FSMContext):
+    from states import UserAttendance
+    await state.update_data(att_status="⏰ Kech qoladi")
+    await state.set_state(UserAttendance.waiting_for_late_time)
+    
+    await callback.message.answer("Iltimos, farzandingiz soat nechada kelishini yozib yuboring (Masalan: 'Soat 10:30 da boradi' yoki 'Abetdan keyin'):")
+    await callback.answer()
+    asyncio.create_task(remind_reason(callback.from_user.id, state, callback.bot))
+
+@router.message(StateFilter("UserAttendance:waiting_for_reason", "UserAttendance:waiting_for_late_time"))
+async def process_attendance_text(message: Message, state: FSMContext):
     data = await state.get_data()
     status = data.get("att_status", "Noma'lum")
     reason = message.text
+    
+    current_state = await state.get_state()
+    field_name = "⏱ Vaqti" if current_state == "UserAttendance:waiting_for_late_time" else "📝 Sababi"
     
     user_name = message.from_user.full_name
     username = f"@{message.from_user.username}" if message.from_user.username else "yo'q"
@@ -517,13 +561,17 @@ async def process_attendance_reason(message: Message, state: FSMContext):
         try:
             await message.bot.send_message(
                 chat_id=ADMIN_ID,
-                text=f"🚨 <b>Davomat xabari!</b>\n\n👤 Ota-ona: {user_name} ({username})\nHolat: <b>{status}</b>\n\n📝 Sababi: <b>{reason}</b>",
+                text=f"🚨 <b>Davomat xabari!</b>\n\n👤 Ota-ona: {user_name} ({username})\nHolat: <b>{status}</b>\n\n{field_name}: <b>{reason}</b>",
                 parse_mode="HTML"
             )
         except Exception:
             pass
             
-    await message.reply("✅ Sabab qabul qilindi va adminga yetkazildi. Rahmat!", reply_markup=ReplyKeyboardRemove())
+    if current_state == "UserAttendance:waiting_for_late_time":
+        await message.reply("✅ Xo'p rahmat, farzandingizni kutamiz!", reply_markup=ReplyKeyboardRemove())
+    else:
+        await message.reply("✅ Sabab qabul qilindi va adminga yetkazildi. Rahmat!", reply_markup=ReplyKeyboardRemove())
+        
     await state.clear()
 
 @router.callback_query(F.data == "educator_contact")

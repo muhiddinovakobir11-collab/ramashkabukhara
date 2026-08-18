@@ -1,4 +1,4 @@
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+﻿from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from config import ADMIN_ID
 
 def main_inline_menu(user_id: int):
@@ -339,3 +339,15 @@ def polls_action_keyboard():
         ]
     )
 
+
+def attendance_late_keyboard():
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="10 minut", callback_data="late_10"),
+             InlineKeyboardButton(text="15 minut", callback_data="late_15")],
+            [InlineKeyboardButton(text="20 minut", callback_data="late_20"),
+             InlineKeyboardButton(text="1 soat", callback_data="late_60")],
+            [InlineKeyboardButton(text="✍️ O'zim yozaman", callback_data="late_manual")],
+            [InlineKeyboardButton(text="🔙 Orqaga", callback_data="main_menu")]
+        ]
+    )

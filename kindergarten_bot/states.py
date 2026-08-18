@@ -35,4 +35,6 @@ class UserPoll(StatesGroup):
 
 class UserAttendance(StatesGroup):
     waiting_for_reason = State()
+    waiting_for_late_time = State()
+
 
