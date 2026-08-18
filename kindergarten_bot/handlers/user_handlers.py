@@ -552,7 +552,7 @@ async def attendance_late_quick(callback: CallbackQuery):
         try:
             admin_msg = await callback.bot.send_message(
                 chat_id=ADMIN_ID,
-                text=base_admin_text + (f"\n\n🔄 <b>Qolgan vaqt: {int(delta.total_seconds()//60)} daqiqa...</b>" if delta else ""),
+                text=base_admin_text + (f"\n\n🔄 <b>Qolgan vaqt: {int(delta.total_seconds()//60):02d}:{int(delta.total_seconds()%60):02d}</b>" if delta else ""),
                 parse_mode="HTML"
             )
             if delta:
@@ -562,7 +562,7 @@ async def attendance_late_quick(callback: CallbackQuery):
             pass
             
     user_msg = await callback.message.answer(
-        base_user_text + (f"\n\n🔄 <b>Qolgan vaqt: {int(delta.total_seconds()//60)} daqiqa...</b>" if delta else ""), 
+        base_user_text + (f"\n\n🔄 <b>Qolgan vaqt: {int(delta.total_seconds()//60):02d}:{int(delta.total_seconds()%60):02d}</b>" if delta else ""), 
         reply_markup=ReplyKeyboardRemove()
     )
     if delta:
@@ -604,7 +604,7 @@ async def process_attendance_text(message: Message, state: FSMContext):
         try:
             admin_msg = await message.bot.send_message(
                 chat_id=ADMIN_ID,
-                text=base_admin_text + (f"\n\n🔄 <b>Qolgan vaqt: {int(delta.total_seconds()//60)} daqiqa...</b>" if delta else ""),
+                text=base_admin_text + (f"\n\n🔄 <b>Qolgan vaqt: {int(delta.total_seconds()//60):02d}:{int(delta.total_seconds()%60):02d}</b>" if delta else ""),
                 parse_mode="HTML"
             )
             if delta:
@@ -614,7 +614,7 @@ async def process_attendance_text(message: Message, state: FSMContext):
             pass
             
     user_msg = await message.reply(
-        base_user_text + (f"\n\n🔄 <b>Qolgan vaqt: {int(delta.total_seconds()//60)} daqiqa...</b>" if delta else ""), 
+        base_user_text + (f"\n\n🔄 <b>Qolgan vaqt: {int(delta.total_seconds()//60):02d}:{int(delta.total_seconds()%60):02d}</b>" if delta else ""), 
         reply_markup=ReplyKeyboardRemove()
     )
     if delta:
@@ -759,6 +759,7 @@ async def process_poll_feedback(message: Message, state: FSMContext):
             
     await message.reply("✅ Fikringiz uchun katta rahmat! Bu biz uchun juda muhim.", reply_markup=ReplyKeyboardRemove())
     await state.clear()
+
 
 
 
