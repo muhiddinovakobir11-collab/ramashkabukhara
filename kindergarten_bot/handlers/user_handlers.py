@@ -1,4 +1,4 @@
-﻿from aiogram import Router, F, Bot
+from aiogram import Router, F, Bot
 from aiogram.types import Message, CallbackQuery, FSInputFile, InputMediaPhoto, InputMediaVideo, ReplyKeyboardRemove
 from aiogram.filters import CommandStart, StateFilter, Command
 from aiogram.fsm.context import FSMContext
@@ -563,6 +563,7 @@ async def attendance_late_quick(callback: CallbackQuery):
             
     user_msg = await callback.message.answer(
         base_user_text + (f"\n\n🔄 <b>Qolgan vaqt: {int(delta.total_seconds()//60):02d}:{int(delta.total_seconds()%60):02d}</b>" if delta else ""), 
+        parse_mode="HTML",
         reply_markup=ReplyKeyboardRemove()
     )
     if delta:
@@ -615,6 +616,7 @@ async def process_attendance_text(message: Message, state: FSMContext):
             
     user_msg = await message.reply(
         base_user_text + (f"\n\n🔄 <b>Qolgan vaqt: {int(delta.total_seconds()//60):02d}:{int(delta.total_seconds()%60):02d}</b>" if delta else ""), 
+        parse_mode="HTML",
         reply_markup=ReplyKeyboardRemove()
     )
     if delta:
