@@ -1,4 +1,4 @@
-﻿from aiogram import Router, F, Bot
+from aiogram import Router, F, Bot
 from aiogram.types import Message, CallbackQuery, FSInputFile, InputMediaPhoto, InputMediaVideo, ReplyKeyboardRemove
 from aiogram.filters import CommandStart, StateFilter
 from aiogram.fsm.context import FSMContext
@@ -10,6 +10,7 @@ from keyboards.reply_keyboards import contact_keyboard
 from config import ADMIN_ID, START_VIDEO_ID
 import database
 import datetime
+import asyncio
 
 router = Router()
 
@@ -478,23 +479,52 @@ async def attendance_menu(callback: CallbackQuery):
     await send_section_media(callback, "text_attendance", default_text, attendance_action_keyboard())
     await callback.answer()
 
+async def remind_reason(user_id: int, state: FSMContext, bot: Bot):
+    for _ in range(15): # 45 minutgacha eslatadi (15 marta)
+        await asyncio.sleep(180) # 3 minut
+        current_state = await state.get_state()
+        if current_state != "UserAttendance:waiting_for_reason":
+            break
+        try:
+            await bot.send_message(user_id, "❗️ Hurmatli ota-ona, iltimos farzandingiz kela olmasligi (yoki kechikishi) sababini yozib yuboring:")
+        except Exception:
+            break
+
 @router.callback_query(F.data.in_(["att_absent", "att_late"]))
-async def attendance_action(callback: CallbackQuery):
+async def attendance_action(callback: CallbackQuery, state: FSMContext):
     status = "🤒 Kasal / Kela olmaydi" if callback.data == "att_absent" else "⏰ Kech qoladi"
-    user_name = callback.from_user.full_name
-    username = f"@{callback.from_user.username}" if callback.from_user.username else "yo'q"
+    
+    from states import UserAttendance
+    await state.update_data(att_status=status)
+    await state.set_state(UserAttendance.waiting_for_reason)
+    
+    await callback.message.answer(f"Iltimos, farzandingiz nima sababdan <b>{status.lower()}</b>gini qisqacha yozib yuboring (Masalan: 'Toblari qochdi', 'Qishloqqa ketdik'):", parse_mode="HTML")
+    await callback.answer()
+    
+    # Orqa fonda 3 minutda bir eslatuvchi taskni ishga tushiramiz
+    asyncio.create_task(remind_reason(callback.from_user.id, state, callback.bot))
+
+@router.message(StateFilter("UserAttendance:waiting_for_reason"))
+async def process_attendance_reason(message: Message, state: FSMContext):
+    data = await state.get_data()
+    status = data.get("att_status", "Noma'lum")
+    reason = message.text
+    
+    user_name = message.from_user.full_name
+    username = f"@{message.from_user.username}" if message.from_user.username else "yo'q"
     
     if ADMIN_ID:
         try:
-            await callback.bot.send_message(
+            await message.bot.send_message(
                 chat_id=ADMIN_ID,
-                text=f"🚨 <b>Davomat xabari!</b>\n\n👤 Ota-ona: {user_name} ({username})\nHolat: <b>{status}</b>",
+                text=f"🚨 <b>Davomat xabari!</b>\n\n👤 Ota-ona: {user_name} ({username})\nHolat: <b>{status}</b>\n\n📝 Sababi: <b>{reason}</b>",
                 parse_mode="HTML"
             )
         except Exception:
             pass
             
-    await callback.answer("✅ Xabaringiz adminga yetkazildi. Rahmat!", show_alert=True)
+    await message.reply("✅ Sabab qabul qilindi va adminga yetkazildi. Rahmat!", reply_markup=ReplyKeyboardRemove())
+    await state.clear()
 
 @router.callback_query(F.data == "educator_contact")
 async def educator_contact_menu(callback: CallbackQuery):

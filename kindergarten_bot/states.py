@@ -32,3 +32,7 @@ class UserEducatorContact(StatesGroup):
 class UserPoll(StatesGroup):
     waiting_for_feedback = State()
 
+
+class UserAttendance(StatesGroup):
+    waiting_for_reason = State()
+
