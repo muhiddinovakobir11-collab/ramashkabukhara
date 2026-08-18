@@ -751,26 +751,42 @@ async def polls_menu(callback: CallbackQuery):
 @router.callback_query(F.data == "polls_start")
 async def start_polls(callback: CallbackQuery, state: FSMContext):
     from states import UserPoll
-    await callback.message.answer("📋 Iltimos, bog'chamiz xizmatlariga 1 dan 5 gacha baho bering va takliflaringizni yozib yuboring (Masalan: 5 yulduz. Hamma narsa zo'r!):")
-    await state.set_state(UserPoll.waiting_for_feedback)
+    from keyboards.inline_keyboards import poll_stars_keyboard
+    await callback.message.answer("⭐️ Iltimos, bog'chamiz xizmatlariga 1 dan 5 gacha baho bering:", reply_markup=poll_stars_keyboard())
+    await state.set_state(UserPoll.waiting_for_star)
     await callback.answer()
+
+@router.callback_query(StateFilter("UserPoll:waiting_for_star"), F.data.startswith("poll_star_"))
+async def poll_star_selected(callback: CallbackQuery, state: FSMContext):
+    star_count = int(callback.data.split("_")[-1])
+    await state.update_data(poll_star=star_count)
+    from states import UserPoll
+    
+    star_str = "⭐️" * star_count
+    await callback.message.edit_text(f"Sizning bahoingiz: {star_str}\n\nKatta rahmat! Endi o'z taklif va mulohazalaringizni yozib qoldirishingiz mumkin:")
+    await state.set_state(UserPoll.waiting_for_feedback)
 
 @router.message(StateFilter("UserPoll:waiting_for_feedback"))
 async def process_poll_feedback(message: Message, state: FSMContext):
     user_name = message.from_user.full_name
     
+    data = await state.get_data()
+    star_count = data.get("poll_star", 0)
+    star_str = "⭐️" * star_count if star_count else "Noma'lum"
+    
     if ADMIN_ID:
         try:
             await message.bot.send_message(
                 chat_id=ADMIN_ID,
-                text=f"📊 <b>Yangi so'rovnoma javobi!</b>\n\n👤 Ota-ona: {user_name}\n\n📝 Javob:\n{message.text}",
+                text=f"📊 <b>Yangi so'rovnoma javobi!</b>\n\n👤 Ota-ona: {user_name}\n⭐️ Baho: {star_str}\n\n💬 Taklif/Fikr:\n{message.text}",
                 parse_mode="HTML"
             )
         except Exception:
             pass
             
-    await message.reply("✅ Fikringiz uchun katta rahmat! Bu biz uchun juda muhim.", reply_markup=ReplyKeyboardRemove())
+    await message.reply("✅ Fikringiz qabul qilindi. Kattakon rahmat!", reply_markup=ReplyKeyboardRemove())
     await state.clear()
+
 
 
 

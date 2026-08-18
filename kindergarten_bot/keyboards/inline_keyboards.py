@@ -393,3 +393,16 @@ def user_groups_keyboard(groups):
         keyboard.append([InlineKeyboardButton(text=g['group_name'], callback_data=f"sel_group_{g['id']}")])
     keyboard.append([InlineKeyboardButton(text="🔙 Orqaga", callback_data="back_to_main")])
     return InlineKeyboardMarkup(inline_keyboard=keyboard)
+
+def poll_stars_keyboard():
+    builder = InlineKeyboardBuilder()
+    builder.row(
+        InlineKeyboardButton(text="⭐ 1", callback_data="poll_star_1"),
+        InlineKeyboardButton(text="⭐⭐ 2", callback_data="poll_star_2"),
+        InlineKeyboardButton(text="⭐⭐⭐ 3", callback_data="poll_star_3")
+    )
+    builder.row(
+        InlineKeyboardButton(text="⭐⭐⭐⭐ 4", callback_data="poll_star_4"),
+        InlineKeyboardButton(text="⭐⭐⭐⭐⭐ 5", callback_data="poll_star_5")
+    )
+    return builder.as_markup()
