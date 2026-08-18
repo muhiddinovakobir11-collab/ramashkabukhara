@@ -72,7 +72,10 @@ async def start_editing_text(callback: CallbackQuery, state: FSMContext):
         "dress_code": "Bog'cha formasi",
         "feedback": "Fikr va takliflar",
         "vacancies": "Vakansiyalar",
-        "registration": "Farzandni yozdirish"
+        "registration": "Farzandni yozdirish",
+        "attendance": "Davomat va ogohlantirish",
+        "educator_contact": "Tarbiyachi bilan aloqa",
+        "polls": "Ota-onalar bahosi"
     }
     
     section_name = names.get(section, section)
@@ -553,3 +556,4 @@ async def admin_delete_last_broadcast_handler(callback: CallbackQuery):
         f"✅ O'chirish yakunlandi!\nJami {deleted} ta xabar o'chirildi.",
         reply_markup=admin_menu_keyboard()
     )
+

@@ -470,3 +470,91 @@ async def unknown_message(message: Message):
     # Har qanday tushunarsiz matn yozilganda shu xabar chiqadi
     await message.reply("Botimizga xush kelibsiz! 😊\n\nIltimos, botdan to'liq foydalanish uchun /start komandasini bosing.")
 
+
+@router.callback_query(F.data == "attendance")
+async def attendance_menu(callback: CallbackQuery):
+    default_text = "🌡 <b>Davomat va ogohlantirish</b>\n\nAgar farzandingiz bugun bog'chaga kela olmasa yoki kechiksa, quyidagi tugmalar orqali bizni ogohlantirishingiz mumkin."
+    from keyboards.inline_keyboards import attendance_action_keyboard
+    await send_section_media(callback, "text_attendance", default_text, attendance_action_keyboard())
+    await callback.answer()
+
+@router.callback_query(F.data.in_(["att_absent", "att_late"]))
+async def attendance_action(callback: CallbackQuery):
+    status = "🤒 Kasal / Kela olmaydi" if callback.data == "att_absent" else "⏰ Kech qoladi"
+    user_name = callback.from_user.full_name
+    username = f"@{callback.from_user.username}" if callback.from_user.username else "yo'q"
+    
+    if ADMIN_ID:
+        try:
+            await callback.bot.send_message(
+                chat_id=ADMIN_ID,
+                text=f"🚨 <b>Davomat xabari!</b>\n\n👤 Ota-ona: {user_name} ({username})\nHolat: <b>{status}</b>",
+                parse_mode="HTML"
+            )
+        except Exception:
+            pass
+            
+    await callback.answer("✅ Xabaringiz adminga yetkazildi. Rahmat!", show_alert=True)
+
+@router.callback_query(F.data == "educator_contact")
+async def educator_contact_menu(callback: CallbackQuery):
+    default_text = "💬 <b>Tarbiyachi bilan aloqa</b>\n\nTarbiyachilarga to'g'ridan-to'g'ri xabar, iltimos yoki savolingizni yo'llashingiz mumkin."
+    from keyboards.inline_keyboards import educator_contact_keyboard
+    await send_section_media(callback, "text_educator_contact", default_text, educator_contact_keyboard())
+    await callback.answer()
+
+@router.callback_query(F.data == "contact_educator_start")
+async def start_educator_contact(callback: CallbackQuery, state: FSMContext):
+    from states import UserEducatorContact
+    await callback.message.answer("✍️ Xabaringizni yozib yuboring:")
+    await state.set_state(UserEducatorContact.waiting_for_message)
+    await callback.answer()
+
+@router.message(StateFilter("UserEducatorContact:waiting_for_message"))
+async def process_educator_message(message: Message, state: FSMContext):
+    user_name = message.from_user.full_name
+    username = f"@{message.from_user.username}" if message.from_user.username else "yo'q"
+    
+    if ADMIN_ID:
+        try:
+            await message.bot.send_message(
+                chat_id=ADMIN_ID,
+                text=f"💬 <b>Tarbiyachiga yangi xabar!</b>\n\n👤 Kimdan: {user_name} ({username})\n\n📝 Xabar:\n{message.text}",
+                parse_mode="HTML"
+            )
+        except Exception:
+            pass
+            
+    await message.reply("✅ Xabaringiz muvaffaqiyatli yetkazildi!", reply_markup=ReplyKeyboardRemove())
+    await state.clear()
+
+@router.callback_query(F.data == "polls")
+async def polls_menu(callback: CallbackQuery):
+    default_text = "📊 <b>Ota-onalar bahosi</b>\n\nBizning xizmatlarimiz, taomlar va tarbiyachilarimiz haqida o'z bahoingizni va fikringizni qoldiring!"
+    from keyboards.inline_keyboards import polls_action_keyboard
+    await send_section_media(callback, "text_polls", default_text, polls_action_keyboard())
+    await callback.answer()
+
+@router.callback_query(F.data == "polls_start")
+async def start_polls(callback: CallbackQuery, state: FSMContext):
+    from states import UserPoll
+    await callback.message.answer("📋 Iltimos, bog'chamiz xizmatlariga 1 dan 5 gacha baho bering va takliflaringizni yozib yuboring (Masalan: 5 yulduz. Hamma narsa zo'r!):")
+    await state.set_state(UserPoll.waiting_for_feedback)
+    await callback.answer()
+
+@router.message(StateFilter("UserPoll:waiting_for_feedback"))
+async def process_poll_feedback(message: Message, state: FSMContext):
+    user_name = message.from_user.full_name
+    
+    if ADMIN_ID:
+        try:
+            await message.bot.send_message(
+                chat_id=ADMIN_ID,
+                text=f"📊 <b>Yangi so'rovnoma javobi!</b>\n\n👤 Ota-ona: {user_name}\n\n📝 Javob:\n{message.text}",
+                parse_mode="HTML"
+            )
+        except Exception:
+            pass
+            
+    await message.reply("✅ Fikringiz uchun katta rahmat! Bu biz uchun juda muhim.", reply_markup=ReplyKeyboardRemove())
+    await state.clear()

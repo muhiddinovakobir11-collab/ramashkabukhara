@@ -1,4 +1,4 @@
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+﻿from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from config import ADMIN_ID
 
 def main_inline_menu(user_id: int):
@@ -306,6 +306,30 @@ def delete_broadcast_menu(broadcast_id: int):
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [InlineKeyboardButton(text="🗑 Xabarni bekor qilish (O'chirish)", callback_data=f"delete_broadcast_{broadcast_id}")]
+        ]
+    )
+
+
+def attendance_action_keyboard():
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="🤒 Bugun borolmaydi", callback_data="att_absent")],
+            [InlineKeyboardButton(text="⏰ Kechikib boradi", callback_data="att_late")],
+            [InlineKeyboardButton(text="🔙 Orqaga", callback_data="main_menu")]
+        ]
+    )
+def educator_contact_keyboard():
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="✍️ Xabar yozish", callback_data="contact_educator_start")],
+            [InlineKeyboardButton(text="🔙 Orqaga", callback_data="main_menu")]
+        ]
+    )
+def polls_action_keyboard():
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="🗳 So`rovnomani boshlash", callback_data="polls_start")],
+            [InlineKeyboardButton(text="🔙 Orqaga", callback_data="main_menu")]
         ]
     )
 
