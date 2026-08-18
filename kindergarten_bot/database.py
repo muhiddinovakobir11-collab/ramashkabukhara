@@ -1,4 +1,4 @@
-﻿import aiosqlite
+import aiosqlite
 import json
 from typing import List, Tuple
 
@@ -177,15 +177,21 @@ async def get_all_users() -> List[Tuple]:
             users = await cursor.fetchall()
         return users
 
+_settings_cache = {}
+
 async def get_setting(key: str, default_value: str = "") -> str:
+    if key in _settings_cache:
+        return _settings_cache[key]
     async with aiosqlite.connect(DB_NAME) as db:
         async with db.execute("SELECT value FROM settings WHERE key = ?", (key,)) as cursor:
             result = await cursor.fetchone()
         if result:
+            _settings_cache[key] = result[0]
             return result[0]
         return default_value
 
 async def set_setting(key: str, value: str):
+    _settings_cache[key] = value
     async with aiosqlite.connect(DB_NAME) as db:
         await db.execute("""
             INSERT INTO settings (key, value) 
