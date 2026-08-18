@@ -1,4 +1,4 @@
-﻿from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from config import ADMIN_ID
 
 def main_inline_menu(user_id: int):
@@ -21,7 +21,10 @@ def main_inline_menu(user_id: int):
         [InlineKeyboardButton(text="🏆 Yutuqlarimiz", callback_data="achievements"),
          InlineKeyboardButton(text="👗 Bog'cha formasi", callback_data="dress_code")],
         [InlineKeyboardButton(text="💼 Vakansiyalar (Ish)", callback_data="vacancies")],
-        [InlineKeyboardButton(text="👶 Farzandni yozdirish", callback_data="registration")]
+        [InlineKeyboardButton(text="👶 Farzandni yozdirish", callback_data="registration")],
+        [InlineKeyboardButton(text="🌡 Davomat va ogohlantirish", callback_data="attendance")],
+        [InlineKeyboardButton(text="💬 Tarbiyachi bilan aloqa", callback_data="educator_contact")],
+        [InlineKeyboardButton(text="📊 Ota-onalar bahosi", callback_data="polls")]
     ]
     
     # Faqat admin uchun tugma
@@ -80,6 +83,9 @@ def admin_edit_texts_menu():
             [InlineKeyboardButton(text="💬 Fikr va takliflar", callback_data="edit_feedback"),
              InlineKeyboardButton(text="💼 Vakansiyalar", callback_data="edit_vacancies")],
             [InlineKeyboardButton(text="👶 Farzandni yozdirish", callback_data="edit_registration")],
+            [InlineKeyboardButton(text="🌡 Davomat", callback_data="edit_attendance"),
+             InlineKeyboardButton(text="💬 Tarbiyachi bilan aloqa", callback_data="edit_educator_contact")],
+            [InlineKeyboardButton(text="📊 Ota-onalar bahosi", callback_data="edit_polls")],
             [InlineKeyboardButton(text="🔙 Orqaga", callback_data="admin_panel")]
         ]
     )
