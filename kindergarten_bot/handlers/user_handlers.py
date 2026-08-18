@@ -506,16 +506,17 @@ async def attendance_absent_action(callback: CallbackQuery, state: FSMContext):
 @router.callback_query(F.data == "att_late")
 async def attendance_late_menu(callback: CallbackQuery):
     from keyboards.inline_keyboards import attendance_late_keyboard
-    await callback.message.answer("⏳ Farzandingiz qancha vaqt kechikadi?", reply_markup=attendance_late_keyboard())
+    kb = await attendance_late_keyboard()
+    await callback.message.answer("⏳ Farzandingiz qancha vaqt kechikadi?", reply_markup=kb)
     await callback.answer()
 
 @router.callback_query(F.data.in_(["late_10", "late_15", "late_20", "late_60"]))
 async def attendance_late_quick(callback: CallbackQuery):
     time_map = {
-        "late_10": "10 minut",
-        "late_15": "15 minut",
-        "late_20": "20 minut",
-        "late_60": "1 soat"
+        "late_10": await database.get_setting("late_btn_1", "10 minut"),
+        "late_15": await database.get_setting("late_btn_2", "15 minut"),
+        "late_20": await database.get_setting("late_btn_3", "20 minut"),
+        "late_60": await database.get_setting("late_btn_4", "1 soat")
     }
     time_str = time_map[callback.data]
     

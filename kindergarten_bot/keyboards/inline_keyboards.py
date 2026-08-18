@@ -1,4 +1,4 @@
-﻿from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from config import ADMIN_ID
 
 def main_inline_menu(user_id: int):
@@ -340,14 +340,30 @@ def polls_action_keyboard():
     )
 
 
-def attendance_late_keyboard():
+import database
+
+async def attendance_late_keyboard():
+    btn1 = await database.get_setting("late_btn_1", "10 minut")
+    btn2 = await database.get_setting("late_btn_2", "15 minut")
+    btn3 = await database.get_setting("late_btn_3", "20 minut")
+    btn4 = await database.get_setting("late_btn_4", "1 soat")
+    
     return InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text="10 minut", callback_data="late_10"),
-             InlineKeyboardButton(text="15 minut", callback_data="late_15")],
-            [InlineKeyboardButton(text="20 minut", callback_data="late_20"),
-             InlineKeyboardButton(text="1 soat", callback_data="late_60")],
+            [InlineKeyboardButton(text=btn1, callback_data="late_10"),
+             InlineKeyboardButton(text=btn2, callback_data="late_15")],
+            [InlineKeyboardButton(text=btn3, callback_data="late_20"),
+             InlineKeyboardButton(text=btn4, callback_data="late_60")],
             [InlineKeyboardButton(text="✍️ O'zim yozaman", callback_data="late_manual")],
             [InlineKeyboardButton(text="🔙 Orqaga", callback_data="main_menu")]
+        ]
+    )
+
+def admin_attendance_submenu():
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="📝 Matn/rasmni tahrirlash", callback_data="edit_text_attendance")],
+            [InlineKeyboardButton(text="⏳ Kechikish tugmalari", callback_data="admin_late_btns")],
+            [InlineKeyboardButton(text="🔙 Orqaga", callback_data="admin_edit_texts")]
         ]
     )

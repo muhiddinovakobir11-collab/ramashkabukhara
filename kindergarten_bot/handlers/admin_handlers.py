@@ -53,6 +53,16 @@ async def admin_edit_texts(callback: CallbackQuery, state: FSMContext):
 async def start_editing_text(callback: CallbackQuery, state: FSMContext):
     section = callback.data.replace("edit_", "")
     
+    if section == "attendance":
+        from keyboards.inline_keyboards import admin_attendance_submenu
+        text = "Siz <b>Davomat va ogohlantirish</b> bo'limini tanladingiz. Nimani tahrirlamoqchisiz?"
+        await edit_message_safe(callback.message, text, admin_attendance_submenu())
+        await callback.answer()
+        return
+        
+    if section == "text_attendance":
+        section = "attendance"
+    
     # Kiritilgan nomlarni xaritalash
     names = {
         "services": "Xizmatlar va Narxlar",
@@ -557,3 +567,26 @@ async def admin_delete_last_broadcast_handler(callback: CallbackQuery):
         reply_markup=admin_menu_keyboard()
     )
 
+
+
+@router.callback_query(F.data == "admin_late_btns")
+async def admin_late_btns(callback: CallbackQuery, state: FSMContext):
+    text = "Siz <b>Kechikish tugmalari</b>ni tahrirlashni tanladingiz.\n\nIltimos, 4 ta tugma matnini vergul (,) bilan ajratib yozib yuboring.\nMasalan: <i>10 minut, 15 minut, 30 minut, 1 soat</i>"
+    await state.set_state(AdminSettings.waiting_for_late_btns)
+    await edit_message_safe(callback.message, text, admin_back_keyboard())
+    await callback.answer()
+
+@router.message(AdminSettings.waiting_for_late_btns, F.text)
+async def save_late_btns(message: Message, state: FSMContext):
+    parts = [p.strip() for p in message.text.split(",") if p.strip()]
+    if len(parts) != 4:
+        await message.reply("❌ Xatolik! Iltimos, aynan 4 ta tugma nomini vergul bilan ajratib yozing.\nMasalan: 10 minut, 15 minut, 30 minut, 1 soat")
+        return
+        
+    await database.set_setting("late_btn_1", parts[0])
+    await database.set_setting("late_btn_2", parts[1])
+    await database.set_setting("late_btn_3", parts[2])
+    await database.set_setting("late_btn_4", parts[3])
+    
+    await message.reply("✅ Kechikish tugmalari muvaffaqiyatli yangilandi!")
+    await state.clear()

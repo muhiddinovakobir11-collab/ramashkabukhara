@@ -2,6 +2,7 @@
 
 class AdminSettings(StatesGroup):
     waiting_for_text = State()
+    waiting_for_late_btns = State()
 
 class AdminGallery(StatesGroup):
     waiting_for_media = State()
@@ -36,5 +37,6 @@ class UserPoll(StatesGroup):
 class UserAttendance(StatesGroup):
     waiting_for_reason = State()
     waiting_for_late_time = State()
+
 
 
