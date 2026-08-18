@@ -20,7 +20,7 @@ WEBHOOK_URL = "https://ramashkabukhara-23tg.onrender.com" + WEBHOOK_PATH
 async def on_startup(bot: Bot):
     # Eski polling ulanishlarni o'chirish va Webhook o'rnatish
     await bot.set_webhook(WEBHOOK_URL, drop_pending_updates=True)
-        await database.init_db()
+    await database.init_db()
     asyncio.create_task(timer_loop(bot))
     logging.info("Webhook muvaffaqiyatli o'rnatildi va baza ishga tushirildi!")
 
@@ -83,5 +83,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
