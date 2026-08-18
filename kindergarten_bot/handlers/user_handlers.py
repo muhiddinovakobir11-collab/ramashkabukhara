@@ -1,4 +1,4 @@
-from aiogram import Router, F, Bot
+﻿from aiogram import Router, F, Bot
 from aiogram.types import Message, CallbackQuery, FSInputFile, InputMediaPhoto, InputMediaVideo, ReplyKeyboardRemove
 from aiogram.filters import CommandStart, StateFilter, Command
 from aiogram.fsm.context import FSMContext
@@ -545,9 +545,8 @@ async def attendance_late_quick(callback: CallbackQuery):
     
     delta = parse_time_to_delta(time_str)
     
-    debug_text = f"\n\nDEBUG: delta={repr(delta)}, time_str={repr(time_str)}"
-    base_admin_text = f"🚨 <b>Davomat xabari!</b>\n\n👤 Ota-ona: {user_name} ({username})\nHolat: <b>⏰ Kech qoladi</b>\n\n⏱ Qancha vaqtga: <b>{time_str}</b>" + debug_text
-    base_user_text = f"✅ Xo'p rahmat, farzandingizni kutamiz!\n\nHolat: <b>⏰ Kechikish ({time_str})</b>" + debug_text
+    base_admin_text = f"🚨 <b>Davomat xabari!</b>\n\n👤 Ota-ona: {user_name} ({username})\nHolat: <b>⏰ Kech qoladi</b>\n\n⏱ Qancha vaqtga: <b>{time_str}</b>"
+    base_user_text = f"✅ Xo'p rahmat, farzandingizni kutamiz!\n\nHolat: <b>⏰ Kechikish ({time_str})</b>"
     
     if ADMIN_ID:
         try:
@@ -770,6 +769,7 @@ async def process_poll_feedback(message: Message, state: FSMContext):
             
     await message.reply("✅ Fikringiz uchun katta rahmat! Bu biz uchun juda muhim.", reply_markup=ReplyKeyboardRemove())
     await state.clear()
+
 
 
 
