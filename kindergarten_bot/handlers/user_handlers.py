@@ -683,7 +683,7 @@ async def process_parent_role(callback: CallbackQuery, state: FSMContext):
     await state.set_state(UserEducatorContact.waiting_for_message)
     await callback.answer()
 
-@router.message(StateFilter("UserEducatorContact:waiting_for_message"), F.text)
+@router.message(StateFilter("UserEducatorContact:waiting_for_message"))
 async def process_educator_message(message: Message, state: FSMContext):
     data = await state.get_data()
     child_name = data.get("child_name", "Noma'lum")
@@ -694,19 +694,25 @@ async def process_educator_message(message: Message, state: FSMContext):
     user_name = message.from_user.full_name
     username = f"@{message.from_user.username}" if message.from_user.username else "yo'q"
     
+    msg_text = message.text or message.caption or ""
+    
     text_to_send = (
         f"📩 <b>Sizga yangi xabar keldi!</b>\n\n"
         f"🏫 <b>Guruh:</b> {target_group}\n"
         f"👦 <b>Farzandi:</b> {child_name}\n"
         f"👤 <b>Yuboruvchi:</b> {parent_role} — {user_name} ({username})\n"
-        f"💬 <b>Xabar:</b>\n{message.text}"
     )
-    
+    if msg_text:
+        text_to_send += f"💬 <b>Xabar:</b>\n{msg_text}"
+        
     # Tarbiyachiga yuborish
     sent_to_educator = False
     if target_ed_id:
         try:
-            await message.bot.send_message(chat_id=target_ed_id, text=text_to_send, parse_mode="HTML")
+            if message.content_type == "text":
+                await message.bot.send_message(chat_id=target_ed_id, text=text_to_send, parse_mode="HTML")
+            else:
+                await message.bot.copy_message(chat_id=target_ed_id, from_chat_id=message.chat.id, message_id=message.message_id, caption=text_to_send, parse_mode="HTML")
             sent_to_educator = True
         except Exception as e:
             pass
@@ -719,7 +725,11 @@ async def process_educator_message(message: Message, state: FSMContext):
                 admin_status = "ℹ️ Tarbiyachi ID si kiritilmagan"
                 
             admin_text = f"👮‍♂️ <b>Admin uchun hisobot:</b>\n{admin_status}\n\n" + text_to_send
-            await message.bot.send_message(chat_id=ADMIN_ID, text=admin_text, parse_mode="HTML")
+            
+            if message.content_type == "text":
+                await message.bot.send_message(chat_id=ADMIN_ID, text=admin_text, parse_mode="HTML")
+            else:
+                await message.bot.copy_message(chat_id=ADMIN_ID, from_chat_id=message.chat.id, message_id=message.message_id, caption=admin_text, parse_mode="HTML")
         except Exception:
             pass
             
