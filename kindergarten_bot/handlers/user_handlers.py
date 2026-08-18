@@ -1,6 +1,6 @@
 from aiogram import Router, F, Bot
 from aiogram.types import Message, CallbackQuery, FSInputFile, InputMediaPhoto, InputMediaVideo, ReplyKeyboardRemove
-from aiogram.filters import CommandStart, StateFilter
+from aiogram.filters import CommandStart, StateFilter, Command
 from aiogram.fsm.context import FSMContext
 from states import UserFeedback, UserVacancy, UserRegistration
 from keyboards.inline_keyboards import (back_keyboard, location_keyboard, payment_groups_menu, 
@@ -13,6 +13,11 @@ import datetime
 import asyncio
 
 router = Router()
+
+@router.message(Command("id"))
+async def cmd_id(message: Message):
+    await message.reply(f"Sizning Telegram ID raqamingiz:\n\n<code>{message.from_user.id}</code>\n\nShu raqamni ustiga bosing, nusxa olinadi.", parse_mode="HTML")
+
 
 async def edit_message_safe(message: Message, text: str, reply_markup):
     try:
@@ -585,6 +590,26 @@ async def educator_contact_menu(callback: CallbackQuery):
 @router.callback_query(F.data == "contact_educator_start")
 async def start_educator_contact(callback: CallbackQuery, state: FSMContext):
     from states import UserEducatorContact
+    groups = await database.get_all_educators()
+    
+    if not groups:
+        await callback.message.answer("📝 Iltimos, farzandingizning ism-familiyasini yozib yuboring (Masalan: <i>Ali Valiyev</i>):", parse_mode="HTML")
+        await state.set_state(UserEducatorContact.waiting_for_child_name)
+    else:
+        from keyboards.inline_keyboards import user_groups_keyboard
+        await callback.message.answer("Farzandingiz qaysi guruhga qatnaydi? Iltimos, tanlang:", reply_markup=user_groups_keyboard(groups))
+        await state.set_state(UserEducatorContact.waiting_for_group)
+    await callback.answer()
+
+@router.callback_query(StateFilter("UserEducatorContact:waiting_for_group"), F.data.startswith("sel_group_"))
+async def process_group_selection(callback: CallbackQuery, state: FSMContext):
+    from states import UserEducatorContact
+    group_id = int(callback.data.replace("sel_group_", ""))
+    
+    group_data = await database.get_educator(group_id)
+    if group_data:
+        await state.update_data(target_group_name=group_data['group_name'], target_educator_id=group_data['educator_id'])
+    
     await callback.message.answer("📝 Iltimos, farzandingizning ism-familiyasini yozib yuboring (Masalan: <i>Ali Valiyev</i>):", parse_mode="HTML")
     await state.set_state(UserEducatorContact.waiting_for_child_name)
     await callback.answer()
@@ -619,26 +644,46 @@ async def process_educator_message(message: Message, state: FSMContext):
     data = await state.get_data()
     child_name = data.get("child_name", "Noma'lum")
     parent_role = data.get("parent_role", "Noma'lum")
+    target_group = data.get("target_group_name", "Noma'lum guruh")
+    target_ed_id = data.get("target_educator_id")
     
     user_name = message.from_user.full_name
     username = f"@{message.from_user.username}" if message.from_user.username else "yo'q"
     
+    text_to_send = (
+        f"📩 <b>Sizga yangi xabar keldi!</b>\n\n"
+        f"🏫 <b>Guruh:</b> {target_group}\n"
+        f"👦 <b>Farzandi:</b> {child_name}\n"
+        f"👤 <b>Yuboruvchi:</b> {parent_role} — {user_name} ({username})\n"
+        f"💬 <b>Xabar:</b>\n{message.text}"
+    )
+    
+    # Tarbiyachiga yuborish
+    sent_to_educator = False
+    if target_ed_id:
+        try:
+            await message.bot.send_message(chat_id=target_ed_id, text=text_to_send, parse_mode="HTML")
+            sent_to_educator = True
+        except Exception as e:
+            pass
+            
+    # Adminga nusxa yuborish
     if ADMIN_ID:
         try:
-            await message.bot.send_message(
-                chat_id=ADMIN_ID,
-                text=(
-                    f"📩 <b>Tarbiyachiga yangi xabar keldi!</b>\n\n"
-                    f"👦 <b>Farzandi:</b> {child_name}\n"
-                    f"👤 <b>Yuboruvchi:</b> {parent_role} — {user_name} ({username})\n"
-                    f"💬 <b>Xabar:</b>\n{message.text}"
-                ),
-                parse_mode="HTML"
-            )
+            admin_status = "✅ Tarbiyachiga ham yetkazildi" if sent_to_educator else "❌ Tarbiyachiga yetkazilmadi (ID xato yoki botga kirmagan)"
+            if not target_ed_id:
+                admin_status = "ℹ️ Tarbiyachi ID si kiritilmagan"
+                
+            admin_text = f"👮‍♂️ <b>Admin uchun hisobot:</b>\n{admin_status}\n\n" + text_to_send
+            await message.bot.send_message(chat_id=ADMIN_ID, text=admin_text, parse_mode="HTML")
         except Exception:
             pass
             
-    await message.reply("✅ Xabaringiz muvaffaqiyatli qabul qilindi va adminga yetkazildi!", reply_markup=ReplyKeyboardRemove())
+    if sent_to_educator:
+        await message.reply("✅ Xabaringiz muvaffaqiyatli tarbiyachiga yetkazildi!", reply_markup=ReplyKeyboardRemove())
+    else:
+        await message.reply("✅ Xabaringiz qabul qilindi va adminga yetkazildi!", reply_markup=ReplyKeyboardRemove())
+        
     await state.clear()
 
 @router.callback_query(F.data == "polls")
@@ -671,3 +716,4 @@ async def process_poll_feedback(message: Message, state: FSMContext):
             
     await message.reply("✅ Fikringiz uchun katta rahmat! Bu biz uchun juda muhim.", reply_markup=ReplyKeyboardRemove())
     await state.clear()
+

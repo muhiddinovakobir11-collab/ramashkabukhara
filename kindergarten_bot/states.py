@@ -3,6 +3,8 @@
 class AdminSettings(StatesGroup):
     waiting_for_text = State()
     waiting_for_late_btns = State()
+    waiting_for_group_name = State()
+    waiting_for_educator_id = State()
 
 class AdminGallery(StatesGroup):
     waiting_for_media = State()
@@ -28,6 +30,7 @@ class UserRegistration(StatesGroup):
     waiting_for_phone = State()
 
 class UserEducatorContact(StatesGroup):
+    waiting_for_group = State()
     waiting_for_child_name = State()
     waiting_for_parent_role = State()
     waiting_for_message = State()
@@ -39,6 +42,8 @@ class UserPoll(StatesGroup):
 class UserAttendance(StatesGroup):
     waiting_for_reason = State()
     waiting_for_late_time = State()
+
+
 
 
 

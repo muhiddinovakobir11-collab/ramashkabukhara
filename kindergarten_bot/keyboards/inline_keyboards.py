@@ -377,3 +377,19 @@ def parent_role_keyboard():
             [InlineKeyboardButton(text="👴 Boshqa qarindoshi", callback_data="role_boshqa")]
         ]
     )
+
+def admin_educator_submenu():
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="📝 Matn/rasmni tahrirlash", callback_data="edit_text_educator_contact")],
+            [InlineKeyboardButton(text="👩‍🏫 Guruhlar va Tarbiyachilar", callback_data="admin_manage_educators")],
+            [InlineKeyboardButton(text="🔙 Orqaga", callback_data="admin_edit_texts")]
+        ]
+    )
+
+def user_groups_keyboard(groups):
+    keyboard = []
+    for g in groups:
+        keyboard.append([InlineKeyboardButton(text=g['group_name'], callback_data=f"sel_group_{g['id']}")])
+    keyboard.append([InlineKeyboardButton(text="🔙 Orqaga", callback_data="back_to_main")])
+    return InlineKeyboardMarkup(inline_keyboard=keyboard)

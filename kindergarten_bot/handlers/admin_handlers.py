@@ -62,6 +62,16 @@ async def start_editing_text(callback: CallbackQuery, state: FSMContext):
         
     if section == "text_attendance":
         section = "attendance"
+        
+    if section == "educator_contact":
+        from keyboards.inline_keyboards import admin_educator_submenu
+        text = "Siz <b>Tarbiyachi bilan aloqa</b> bo'limini tanladingiz. Nimani tahrirlamoqchisiz?"
+        await edit_message_safe(callback.message, text, admin_educator_submenu())
+        await callback.answer()
+        return
+        
+    if section == "text_educator_contact":
+        section = "educator_contact"
     
     # Kiritilgan nomlarni xaritalash
     names = {
@@ -590,3 +600,77 @@ async def save_late_btns(message: Message, state: FSMContext):
     
     await message.reply("✅ Kechikish tugmalari muvaffaqiyatli yangilandi!")
     await state.clear()
+
+
+@router.callback_query(F.data == "admin_manage_educators")
+async def admin_manage_educators(callback: CallbackQuery):
+    educators = await database.get_all_educators()
+    
+    text = "<b>👩‍🏫 Tarbiyachilar va Guruhlar ro'yxati:</b>\n\n"
+    if not educators:
+        text += "<i>Hozircha guruhlar qo'shilmagan.</i>\n"
+    else:
+        for ed in educators:
+            text += f"▪️ <b>{ed['group_name']}</b> (ID: <code>{ed['educator_id']}</code>)\n"
+    
+    keyboard = []
+    keyboard.append([InlineKeyboardButton(text="➕ Yangi guruh qo'shish", callback_data="admin_add_educator")])
+    if educators:
+        keyboard.append([InlineKeyboardButton(text="❌ Guruhni o'chirish", callback_data="admin_del_educator")])
+    keyboard.append([InlineKeyboardButton(text="🔙 Orqaga", callback_data="edit_educator_contact")])
+    
+    await edit_message_safe(callback.message, text, InlineKeyboardMarkup(inline_keyboard=keyboard))
+    await callback.answer()
+
+@router.callback_query(F.data == "admin_add_educator")
+async def admin_add_educator_start(callback: CallbackQuery, state: FSMContext):
+    await callback.message.answer("➕ <b>Yangi guruh qo'shish</b>\n\nGuruh nomini yozib yuboring (Masalan: <i>Yulduzcha guruhi</i>):", parse_mode="HTML")
+    await state.set_state(AdminSettings.waiting_for_group_name)
+    await callback.answer()
+
+@router.message(AdminSettings.waiting_for_group_name, F.text)
+async def admin_add_educator_group(message: Message, state: FSMContext):
+    await state.update_data(group_name=message.text)
+    text = (
+        "Endi ushbu guruh tarbiyachisining <b>Telegram ID raqamini</b> yozing.\n\n"
+        "<i>Eslatma: Tarbiyachi avval botga kirib /start bosgan bo'lishi kerak. Keyin /id deb yozsa, bot unga o'z ID sini beradi.</i>"
+    )
+    await message.answer(text, parse_mode="HTML")
+    await state.set_state(AdminSettings.waiting_for_educator_id)
+
+@router.message(AdminSettings.waiting_for_educator_id, F.text)
+async def admin_add_educator_id(message: Message, state: FSMContext):
+    educator_id = message.text.strip()
+    if not educator_id.isdigit() and not educator_id.startswith("-"):
+        await message.reply("❌ Xato! Telegram ID faqat raqamlardan iborat bo'lishi kerak. Qaytadan kiriting:")
+        return
+        
+    data = await state.get_data()
+    group_name = data.get("group_name")
+    
+    await database.add_educator(group_name, educator_id)
+    await message.reply(f"✅ <b>{group_name}</b> muvaffaqiyatli qo'shildi! Xabarlar endi <code>{educator_id}</code> ga yetkaziladi.", parse_mode="HTML")
+    await state.clear()
+
+@router.callback_query(F.data == "admin_del_educator")
+async def admin_del_educator_start(callback: CallbackQuery):
+    educators = await database.get_all_educators()
+    if not educators:
+        await callback.answer("Guruhlar yo'q!", show_alert=True)
+        return
+        
+    keyboard = []
+    for ed in educators:
+        keyboard.append([InlineKeyboardButton(text=f"❌ {ed['group_name']}", callback_data=f"del_ed_{ed['id']}")])
+    keyboard.append([InlineKeyboardButton(text="🔙 Orqaga", callback_data="admin_manage_educators")])
+    
+    await edit_message_safe(callback.message, "O'chirmoqchi bo'lgan guruhingizni tanlang:", InlineKeyboardMarkup(inline_keyboard=keyboard))
+    await callback.answer()
+
+@router.callback_query(F.data.startswith("del_ed_"))
+async def admin_delete_educator_action(callback: CallbackQuery):
+    ed_id = int(callback.data.replace("del_ed_", ""))
+    await database.delete_educator(ed_id)
+    await callback.answer("✅ Guruh o'chirildi!", show_alert=True)
+    await admin_manage_educators(callback)
+
