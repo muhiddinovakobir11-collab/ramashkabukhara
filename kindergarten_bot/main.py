@@ -13,7 +13,7 @@ logging.basicConfig(level=logging.INFO)
 
 # Webhook sozlamalari
 WEBHOOK_PATH = "/webhook"
-WEBHOOK_URL = "https://ramashkabukhara.onrender.com" + WEBHOOK_PATH
+WEBHOOK_URL = "https://ramashkabukhara-23tg.onrender.com" + WEBHOOK_PATH
 
 async def on_startup(bot: Bot):
     # Eski polling ulanishlarni o'chirish va Webhook o'rnatish
