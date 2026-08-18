@@ -1,4 +1,4 @@
-import aiosqlite
+﻿import aiosqlite
 import json
 from typing import List, Tuple
 
@@ -6,7 +6,7 @@ DB_NAME = "kindergarten.db"
 
 async def init_db():
     async with aiosqlite.connect(DB_NAME) as db:
-                await db.execute('''CREATE TABLE IF NOT EXISTS timers (
+        await db.execute('''CREATE TABLE IF NOT EXISTS timers (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             chat_id INTEGER,
             message_id INTEGER,
@@ -372,3 +372,4 @@ async def delete_timer(timer_id: int):
     async with aiosqlite.connect(DB_NAME) as db:
         await db.execute('DELETE FROM timers WHERE id=?', (timer_id,))
         await db.commit()
+
