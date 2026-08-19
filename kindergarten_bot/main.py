@@ -1,4 +1,4 @@
-﻿import logging
+import logging
 import os
 from aiohttp import web
 from aiogram import Bot, Dispatcher
@@ -17,11 +17,24 @@ logging.basicConfig(level=logging.INFO)
 WEBHOOK_PATH = "/webhook"
 WEBHOOK_URL = "https://ramashkabukhara-23tg.onrender.com" + WEBHOOK_PATH
 
+async def keep_alive_loop():
+    import aiohttp
+    url = "https://ramashkabukhara-23tg.onrender.com/"
+    while True:
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url) as response:
+                    pass
+        except Exception:
+            pass
+        await asyncio.sleep(600)  # 10 minutes
+
 async def on_startup(bot: Bot):
     # Eski polling ulanishlarni o'chirish va Webhook o'rnatish
     await bot.set_webhook(WEBHOOK_URL, drop_pending_updates=True)
     await database.init_db()
     asyncio.create_task(timer_loop(bot))
+    asyncio.create_task(keep_alive_loop())
     logging.info("Webhook muvaffaqiyatli o'rnatildi va baza ishga tushirildi!")
 
 def main():
