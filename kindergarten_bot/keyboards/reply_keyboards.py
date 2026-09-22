@@ -4,7 +4,7 @@ from config import ADMIN_ID
 from aiogram.types import WebAppInfo
 
 def main_menu(user_id: int):
-    webapp_url = "https://ramashkabukhara.onrender.com/webapp"
+    webapp_url = "https://ramashkabukhara-23tg.onrender.com/webapp"
     buttons = [
         [KeyboardButton(text="📱 Asosiy Menyuni Ochish", web_app=WebAppInfo(url=webapp_url))]
     ]
